@@ -55,7 +55,3 @@ Built entirely with **HTML, CSS, and JavaScript** — no backend required. Simpl
 - **Suspicion** – Increases when taking risky actions; high suspicion may limit choices.  
 - **Sanity** – Decreases from mistakes or stressful events; low sanity blurs and scrambles text.
 
----
-
-**File Structure**
-
