@@ -1,283 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>Lumen Office RPG</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: "Segoe UI", sans-serif;
-  background: #0e0f13;
-  color: #e6e6e6;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+body{
+  background:#0e0f14;
+  color:#e6e6e6;
+  font-family:"Courier New", monospace;
+  margin:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
 
-#game {
-  width: 760px;
-  max-width: 95%;
-  background: #14161c;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 0 40px rgba(0,0,0,0.7);
-  position: relative;
+#game{
+  width:900px;
+  max-width:95%;
+  background:#1a1d27;
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 0 40px rgba(0,0,0,.8);
+  position:relative;
 }
 
-h1 {
-  margin-top: 0;
-  text-align: center;
+h1{text-align:center;color:#ff6f61;margin-top:0;}
+
+.panel{
+  background:#252a3a;
+  padding:12px;
+  border-radius:8px;
+  margin-bottom:10px;
 }
 
-#instructions {
-  font-size: 0.85em;
-  background: #1b1e26;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  line-height: 1.4;
+#stats{
+  display:flex;
+  justify-content:space-between;
+  font-size:.9em;
 }
 
-#stats {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9em;
-  margin-bottom: 10px;
+#inventory span{
+  background:#ff6f61;
+  padding:3px 6px;
+  margin-right:6px;
+  border-radius:4px;
+  font-size:.8em;
 }
 
-#story {
-  min-height: 140px;
-  margin-bottom: 16px;
-  line-height: 1.5;
+button{
+  width:100%;
+  margin:6px 0;
+  padding:10px;
+  background:#ff6f61;
+  border:none;
+  border-radius:6px;
+  color:#fff;
+  cursor:pointer;
+  font-weight:bold;
+}
+button:hover{background:#ff4b3a;}
+
+input{
+  width:100%;
+  padding:8px;
+  margin-top:6px;
+  border-radius:5px;
+  border:none;
 }
 
-#choices button {
-  display: block;
-  width: 100%;
-  margin: 6px 0;
-  padding: 10px;
-  background: #242838;
-  border: none;
-  color: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-#choices button:hover {
-  background: #30365a;
-}
-
-#puzzle {
-  background: #1c1f2c;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 10px;
-}
-
-input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 6px;
-}
-
-#restart {
-  margin-top: 16px;
-  background: #8a2e2e;
-}
-
-.flicker {
-  animation: flicker 0.15s linear;
-}
-
-@keyframes flicker {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
+.flicker{animation:flicker .15s linear;}
+@keyframes flicker{
+  0%{opacity:1}50%{opacity:.7}100%{opacity:1}
 }
 </style>
 </head>
 
 <body>
 <div id="game">
-  <h1>Lumen Office RPG</h1>
+<h1>Lumen Office RPG</h1>
 
-  <div id="instructions">
-    <strong>How to Survive:</strong><br>
-    • Low <strong>Sanity</strong> scrambles text.<br>
-    • <strong>Memory</strong> unlocks deeper truths.<br>
-    • <strong>Suspicion</strong> attracts attention.<br>
-    • Puzzles always include hints — read carefully.
-  </div>
+<div class="panel">
+<strong>Survival Notes</strong><br>
+• Low <b>Sanity</b> distorts text and perception<br>
+• <b>Memory</b> unlocks deeper paths<br>
+• <b>Suspicion</b> limits options<br>
+• Puzzles always include hints
+</div>
 
-  <div id="stats"></div>
-  <div id="story"></div>
-  <div id="choices"></div>
-  <div id="puzzle"></div>
+<div id="stats" class="panel"></div>
+<div id="inventory" class="panel">Inventory:</div>
+<div id="story" class="panel"></div>
+<div id="choices"></div>
+<div id="puzzle" class="panel"></div>
 </div>
 
 <script>
-const game = {
-  state: "intro",
-  sanity: 100,
-  memory: 0,
-  suspicion: 0,
-  flags: {
-    hasKeycard: false,
-    doorUnlocked: false,
-    fileDecoded: false
-  }
+/* ---------- GAME STATE ---------- */
+const game={
+  state:"intro",
+  sanity:100,
+  memory:40,
+  suspicion:0,
+  inventory:[],
+  flags:{keycard:false,door:false,file:false},
+  flickerCooldown:false
 };
 
-function renderStats() {
-  document.getElementById("stats").innerText =
-    `Sanity: ${game.sanity} | Memory: ${game.memory} | Suspicion: ${game.suspicion}`;
+const secrets=["Keycard","USB Drive","Encrypted Notes"]
+  .sort(()=>Math.random()-0.5);
+
+/* ---------- UI HELPERS ---------- */
+function render(){
+  document.getElementById("stats").innerText=
+    `Sanity:${game.sanity} | Memory:${game.memory} | Suspicion:${game.suspicion}`;
+  document.getElementById("inventory").innerHTML=
+    "Inventory: "+game.inventory.map(i=>`<span>${i}</span>`).join("");
 }
 
-function setStory(text) {
-  document.getElementById("story").innerText = text;
+function setStory(t){
+  const s=document.getElementById("story");
+  s.innerText=game.sanity<50 && Math.random()<0.3
+    ? t.split("").sort(()=>Math.random()-0.5).join("")
+    : t;
+  s.style.filter=game.sanity<50?"blur(1.5px)":"none";
 }
 
-function setChoices(options) {
-  const container = document.getElementById("choices");
-  container.innerHTML = "";
-  options.forEach(opt => {
-    const btn = document.createElement("button");
-    btn.innerText = opt.text;
-    btn.onclick = opt.action;
-    container.appendChild(btn);
+function setChoices(arr){
+  const c=document.getElementById("choices");
+  c.innerHTML="";
+  arr.forEach(o=>{
+    const b=document.createElement("button");
+    b.innerText=o.t;
+    b.onclick=o.a;
+    c.appendChild(b);
   });
 }
 
-function clearPuzzle() {
-  document.getElementById("puzzle").innerHTML = "";
-}
+function puzzle(html){ document.getElementById("puzzle").innerHTML=html; }
+function clearPuzzle(){ document.getElementById("puzzle").innerHTML=""; }
 
-function flickerRandomly() {
-  if (Math.random() < 0.08) {
-    document.getElementById("game").classList.add("flicker");
-    setTimeout(() => {
-      document.getElementById("game").classList.remove("flicker");
-    }, 150);
+/* ---------- FLICKER ---------- */
+setInterval(()=>{
+  if(!game.flickerCooldown && Math.random()<0.03){
+    game.flickerCooldown=true;
+    gameDiv.classList.add("flicker");
+    setTimeout(()=>gameDiv.classList.remove("flicker"),150);
+    setTimeout(()=>game.flickerCooldown=false,5000);
   }
-}
-setInterval(flickerRandomly, 3000);
+},3000);
 
-function intro() {
-  game.state = "intro";
-  setStory("You sit at your desk. The screen reads: 'WELCOME BACK.' You do not remember leaving.");
+const gameDiv=document.getElementById("game");
+
+/* ---------- STORY STATES ---------- */
+function intro(){
+  game.state="intro";
+  setStory("You awaken at your desk. The monitor reads: WELCOME BACK.");
   setChoices([
-    { text: "Inspect your desk", action: desk },
-    { text: "Stand up and look around", action: hallway }
+    {t:"Inspect desk",a:desk},
+    {t:"Enter hallway",a:hallway}
   ]);
-  clearPuzzle();
+  clearPuzzle(); render();
 }
 
-function desk() {
-  game.state = "desk";
-  game.memory += 5;
-  setStory("Inside the drawer you find a badge labeled 'ACCESS — LEVEL 2'.");
-  game.flags.hasKeycard = true;
+function desk(){
+  game.memory+=5;
+  game.flags.keycard=true;
+  game.inventory.push(secrets[0]);
+  setStory("Inside the drawer: a LEVEL 2 badge and a strange sense of déjà vu.");
+  setChoices([{t:"Leave desk",a:hallway}]);
+  render();
+}
+
+function hallway(){
+  setStory("A quiet hallway. A locked security door. An elevator hums.");
   setChoices([
-    { text: "Leave the desk", action: hallway }
-  ]);
-  clearPuzzle();
-}
-
-function hallway() {
-  game.state = "hallway";
-  setStory("A silent hallway stretches ahead. A locked security door blocks one path.");
-  setChoices([
-    {
-      text: "Try the security door",
-      action: () => game.flags.hasKeycard ? securityDoor() : lockedOut()
-    },
-    { text: "Approach the elevator", action: elevator }
-  ]);
-  clearPuzzle();
-}
-
-function lockedOut() {
-  game.sanity -= 5;
-  setStory("The door refuses to open. A red light blinks. You feel watched.");
-  setChoices([{ text: "Step back", action: hallway }]);
-}
-
-function securityDoor() {
-  game.state = "security";
-  setStory("A keypad awaits input.");
-  showKeypadPuzzle();
-}
-
-function showKeypadPuzzle() {
-  document.getElementById("puzzle").innerHTML = `
-    <strong>Door Puzzle</strong><br>
-    Hint: The badge reads 'LEVEL 2'. Think simple.<br>
-    <input id="code" placeholder="Enter code">
-    <button onclick="checkCode()">Unlock</button>
-  `;
-}
-
-function checkCode() {
-  const val = document.getElementById("code").value;
-  if (val === "2") {
-    game.flags.doorUnlocked = true;
-    game.memory += 10;
-    clearPuzzle();
-    securityRoom();
-  } else {
-    game.sanity -= 10;
-    showKeypadPuzzle();
-  }
-}
-
-function securityRoom() {
-  setStory("Inside the security room, a terminal glows with encrypted files.");
-  setChoices([
-    { text: "Decode the file", action: filePuzzle },
-    { text: "Leave quietly", action: hallway }
+    {t:"Security door",a:()=>game.flags.keycard?security():denied()},
+    {t:"Elevator",a:()=>ending("escape")},
+    {t:"Explore side corridor",a:surveillance}
   ]);
 }
 
-function filePuzzle() {
-  document.getElementById("puzzle").innerHTML = `
-    <strong>File Decode</strong><br>
-    Hint: The word 'LUMEN' shifted forward by 1 letter.<br>
-    <input id="decode" placeholder="Decoded word">
+function denied(){
+  game.sanity-=5; game.suspicion+=5;
+  setStory("Access denied. A red light blinks.");
+  setChoices([{t:"Step back",a:hallway}]);
+  render();
+}
+
+function surveillance(){
+  setStory("You enter a room of monitors. One shows your desk.");
+  setChoices([
+    {t:"Search drawers",a:()=>{game.inventory.push(secrets[1]); game.memory+=5; hallway();}},
+    {t:"Leave quickly",a:hallway}
+  ]);
+  render();
+}
+
+function security(){
+  setStory("A keypad waits.");
+  puzzle(`
+    <b>PUZZLE: DOOR ACCESS</b><br>
+    Hint: Badge level equals the code.<br>
+    <input id="code">
+    <button onclick="checkDoor()">Unlock</button>
+  `);
+}
+
+function checkDoor(){
+  if(document.getElementById("code").value==="2"){
+    game.flags.door=true; game.memory+=10;
+    clearPuzzle(); terminal();
+  } else { game.sanity-=10; }
+  render();
+}
+
+function terminal(){
+  setStory("A terminal displays an encoded file.");
+  setChoices([
+    {t:"Decode file",a:filePuzzle},
+    {t:"Leave",a:hallway}
+  ]);
+}
+
+function filePuzzle(){
+  puzzle(`
+    <b>PUZZLE: FILE DECODE</b><br>
+    Hint: Shift each letter in LUMEN forward by one.<br>
+    <input id="decode">
     <button onclick="checkFile()">Submit</button>
-  `;
+  `);
 }
 
-function checkFile() {
-  const val = document.getElementById("decode").value.toLowerCase();
-  if (val === "mvnfo") {
-    game.flags.fileDecoded = true;
-    game.memory += 15;
+function checkFile(){
+  if(document.getElementById("decode").value.toLowerCase()==="mvnfo"){
+    game.flags.file=true; game.memory+=20;
     ending("truth");
-  } else {
-    game.sanity -= 10;
-  }
+  } else { game.sanity-=10; }
+  render();
 }
 
-function elevator() {
-  ending("escape");
-}
-
-function ending(type) {
+function ending(type){
   clearPuzzle();
-  setChoices([
-    { text: "Restart Game", action: () => location.reload() }
-  ]);
-
-  if (type === "truth") {
-    setStory("You uncover the truth. The office was never meant to let you leave.");
-  } else {
-    setStory("The elevator descends. You escape — but remember nothing.");
-  }
+  setChoices([{t:"Restart Game",a:()=>location.reload()}]);
+  setStory(
+    type==="truth"
+      ?"You uncover the truth. The office was never meant to end."
+      :"The elevator descends. You leave with your memory erased."
+  );
 }
 
-renderStats();
+/* ---------- START ---------- */
 intro();
 </script>
 </body>
