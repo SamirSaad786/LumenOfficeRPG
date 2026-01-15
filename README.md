@@ -1,4 +1,3 @@
-# LumenOfficeRPG
 # Lumen Office RPG
 
 A **mysterious office RPG** playable directly in your browser. Explore a corporate office, uncover secrets, solve puzzles, and survive while managing your sanity, memory, and suspicion.  
