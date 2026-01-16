@@ -2,257 +2,750 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lumen Office RPG</title>
-
 <style>
-body{
-  background:#0e0f14;
-  color:#e6e6e6;
-  font-family:"Courier New", monospace;
-  margin:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+* {
+  box-sizing: border-box;
 }
 
-#game{
-  width:900px;
-  max-width:95%;
-  background:#1a1d27;
-  padding:20px;
-  border-radius:14px;
-  box-shadow:0 0 40px rgba(0,0,0,.8);
-  position:relative;
+body {
+  background: linear-gradient(135deg, #0a0c12 0%, #1a1d27 100%);
+  color: #e8eaed;
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-h1{text-align:center;color:#ff6f61;margin-top:0;}
-
-.panel{
-  background:#252a3a;
-  padding:12px;
-  border-radius:8px;
-  margin-bottom:10px;
+#game {
+  width: 900px;
+  max-width: 100%;
+  background: linear-gradient(145deg, #1e2230 0%, #252a3a 100%);
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 60px rgba(0, 0, 0, 0.6), 
+              0 0 100px rgba(255, 111, 97, 0.1);
+  position: relative;
+  border: 1px solid rgba(255, 111, 97, 0.2);
 }
 
-#stats{
-  display:flex;
-  justify-content:space-between;
-  font-size:.9em;
+h1 {
+  text-align: center;
+  color: #ff6f61;
+  margin: 0 0 20px 0;
+  font-size: 2em;
+  text-shadow: 0 0 20px rgba(255, 111, 97, 0.5);
+  letter-spacing: 2px;
 }
 
-#inventory span{
-  background:#ff6f61;
-  padding:3px 6px;
-  margin-right:6px;
-  border-radius:4px;
-  font-size:.8em;
+.panel {
+  background: rgba(37, 42, 58, 0.8);
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 111, 97, 0.1);
+  transition: all 0.3s ease;
 }
 
-button{
-  width:100%;
-  margin:6px 0;
-  padding:10px;
-  background:#ff6f61;
-  border:none;
-  border-radius:6px;
-  color:#fff;
-  cursor:pointer;
-  font-weight:bold;
-}
-button:hover{background:#ff4b3a;}
-
-input{
-  width:100%;
-  padding:8px;
-  margin-top:6px;
-  border-radius:5px;
-  border:none;
+.panel:hover {
+  border-color: rgba(255, 111, 97, 0.3);
 }
 
-.flicker{animation:flicker .15s linear;}
-@keyframes flicker{
-  0%{opacity:1}50%{opacity:.7}100%{opacity:1}
+#stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95em;
+  gap: 15px;
+}
+
+.stat {
+  flex: 1;
+  padding: 8px;
+  background: rgba(14, 15, 20, 0.5);
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid rgba(255, 111, 97, 0.15);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8em;
+  color: #ff6f61;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.stat-low {
+  color: #ff4444;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+#inventory {
+  min-height: 40px;
+}
+
+#inventory span {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff6f61 0%, #ff4b3a 100%);
+  padding: 6px 12px;
+  margin: 4px 6px 4px 0;
+  border-radius: 6px;
+  font-size: 0.85em;
+  box-shadow: 0 2px 8px rgba(255, 111, 97, 0.3);
+  transition: transform 0.2s;
+}
+
+#inventory span:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 111, 97, 0.5);
+}
+
+#story {
+  min-height: 100px;
+  font-size: 1.05em;
+  line-height: 1.6;
+  transition: filter 0.5s ease;
+}
+
+#choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #ff6f61 0%, #ff4b3a 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95em;
+  font-family: 'Courier New', monospace;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 111, 97, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+button:hover::before {
+  left: 100%;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 111, 97, 0.5);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 111, 97, 0.3);
+  background: rgba(14, 15, 20, 0.5);
+  color: #e8eaed;
+  font-family: 'Courier New', monospace;
+  font-size: 1em;
+  transition: border-color 0.3s;
+}
+
+input:focus {
+  outline: none;
+  border-color: #ff6f61;
+  box-shadow: 0 0 10px rgba(255, 111, 97, 0.3);
+}
+
+.flicker {
+  animation: flicker 0.15s linear;
+}
+
+@keyframes flicker {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.scrambled {
+  animation: scramble 0.1s infinite;
+}
+
+@keyframes scramble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1px); }
+  75% { transform: translateX(1px); }
+}
+
+@media (max-width: 768px) {
+  #game {
+    padding: 20px;
+  }
+  
+  h1 {
+    font-size: 1.5em;
+  }
+  
+  #stats {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 </style>
 </head>
-
 <body>
+
 <div id="game">
-<h1>Lumen Office RPG</h1>
-
-<div class="panel">
-<strong>Survival Notes</strong><br>
-• Low <b>Sanity</b> distorts text and perception<br>
-• <b>Memory</b> unlocks deeper paths<br>
-• <b>Suspicion</b> limits options<br>
-• Puzzles always include hints
-</div>
-
-<div id="stats" class="panel"></div>
-<div id="inventory" class="panel">Inventory:</div>
-<div id="story" class="panel"></div>
-<div id="choices"></div>
-<div id="puzzle" class="panel"></div>
+  <h1>LUMEN OFFICE RPG</h1>
+  
+  <div class="panel">
+    <strong>⚠ SURVIVAL NOTES</strong><br>
+    • Low <b>Sanity</b> distorts text and perception<br>
+    • <b>Memory</b> unlocks deeper paths<br>
+    • <b>Suspicion</b> limits options<br>
+    • Puzzles always include hints
+  </div>
+  
+  <div id="stats" class="panel"></div>
+  <div id="inventory" class="panel">Inventory: <em>Empty</em></div>
+  <div id="story" class="panel"></div>
+  <div id="choices"></div>
+  <div id="puzzle" class="panel" style="display:none;"></div>
 </div>
 
 <script>
-/* ---------- GAME STATE ---------- */
-const game={
-  state:"intro",
-  sanity:100,
-  memory:40,
-  suspicion:0,
-  inventory:[],
-  flags:{keycard:false,door:false,file:false},
-  flickerCooldown:false
+/* --------- GAME STATE --------- */
+const game = {
+  state: "intro",
+  sanity: 100,
+  memory: 40,
+  suspicion: 0,
+  inventory: [],
+  flags: { 
+    keycard: false, 
+    door: false, 
+    file: false, 
+    visitedDesk: false, 
+    visitedSurveillance: false,
+    knowsOwnName: false,
+    heardFootsteps: false,
+    readNote: false
+  },
+  flickerCooldown: false,
+  puzzleAttempts: { door: 0, file: 0 }
 };
 
-const secrets=["Keycard","USB Drive","Encrypted Notes"]
-  .sort(()=>Math.random()-0.5);
+// Randomize secret locations each playthrough
+const secrets = ["Level 2 Keycard", "USB Drive", "Encrypted Notes"]
+  .sort(() => Math.random() - 0.5);
 
-/* ---------- UI HELPERS ---------- */
-function render(){
-  document.getElementById("stats").innerText=
-    `Sanity:${game.sanity} | Memory:${game.memory} | Suspicion:${game.suspicion}`;
-  document.getElementById("inventory").innerHTML=
-    "Inventory: "+game.inventory.map(i=>`<span>${i}</span>`).join("");
+/* --------- UI HELPERS --------- */
+function render() {
+  // Clamp stats to valid ranges
+  game.sanity = Math.max(0, Math.min(100, game.sanity));
+  game.memory = Math.max(0, Math.min(100, game.memory));
+  game.suspicion = Math.max(0, Math.min(100, game.suspicion));
+  
+  const stats = document.getElementById("stats");
+  stats.innerHTML = `
+    <div class="stat">
+      <span class="stat-label">SANITY</span>
+      <span class="stat-value ${game.sanity < 50 ? 'stat-low' : ''}">${game.sanity}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">MEMORY</span>
+      <span class="stat-value">${game.memory}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">SUSPICION</span>
+      <span class="stat-value ${game.suspicion > 50 ? 'stat-low' : ''}">${game.suspicion}</span>
+    </div>
+  `;
+  
+  const inv = document.getElementById("inventory");
+  inv.innerHTML = "Inventory: " + 
+    (game.inventory.length === 0 
+      ? "<em>Empty</em>" 
+      : game.inventory.map(i => `<span>${i}</span>`).join(""));
 }
 
-function setStory(t){
-  const s=document.getElementById("story");
-  s.innerText=game.sanity<50 && Math.random()<0.3
-    ? t.split("").sort(()=>Math.random()-0.5).join("")
-    : t;
-  s.style.filter=game.sanity<50?"blur(1.5px)":"none";
+function setStory(text) {
+  const story = document.getElementById("story");
+  let displayText = text;
+  
+  // Progressive sanity effects
+  if (game.sanity < 50) {
+    if (game.sanity < 30 && Math.random() < 0.4) {
+      displayText = text.split(' ').map(word => 
+        Math.random() < 0.5 ? word.split('').sort(() => Math.random() - 0.5).join('') : word
+      ).join(' ');
+    } else if (Math.random() < 0.25) {
+      displayText = text.split(' ').map(word => 
+        Math.random() < 0.3 ? word.split('').sort(() => Math.random() - 0.5).join('') : word
+      ).join(' ');
+    }
+    story.style.filter = game.sanity < 30 ? "blur(2px)" : "blur(1px)";
+    story.classList.add('scrambled');
+  } else {
+    story.style.filter = "none";
+    story.classList.remove('scrambled');
+  }
+  
+  story.innerText = displayText;
 }
 
-function setChoices(arr){
-  const c=document.getElementById("choices");
-  c.innerHTML="";
-  arr.forEach(o=>{
-    const b=document.createElement("button");
-    b.innerText=o.t;
-    b.onclick=o.a;
-    c.appendChild(b);
+function setChoices(choices) {
+  const container = document.getElementById("choices");
+  container.innerHTML = "";
+  
+  choices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.innerText = choice.text;
+    btn.onclick = () => {
+      container.querySelectorAll('button').forEach(b => b.disabled = true);
+      choice.action();
+    };
+    container.appendChild(btn);
   });
 }
 
-function puzzle(html){ document.getElementById("puzzle").innerHTML=html; }
-function clearPuzzle(){ document.getElementById("puzzle").innerHTML=""; }
+function showPuzzle(html) {
+  const puzzle = document.getElementById("puzzle");
+  puzzle.innerHTML = html;
+  puzzle.style.display = "block";
+}
 
-/* ---------- FLICKER ---------- */
-setInterval(()=>{
-  if(!game.flickerCooldown && Math.random()<0.03){
-    game.flickerCooldown=true;
+function clearPuzzle() {
+  const puzzle = document.getElementById("puzzle");
+  puzzle.innerHTML = "";
+  puzzle.style.display = "none";
+}
+
+/* --------- FLICKER EFFECT --------- */
+const gameDiv = document.getElementById("game");
+
+setInterval(() => {
+  if (!game.flickerCooldown && Math.random() < 0.03) {
+    game.flickerCooldown = true;
     gameDiv.classList.add("flicker");
-    setTimeout(()=>gameDiv.classList.remove("flicker"),150);
-    setTimeout(()=>game.flickerCooldown=false,5000);
+    setTimeout(() => gameDiv.classList.remove("flicker"), 150);
+    setTimeout(() => game.flickerCooldown = false, 5000);
   }
-},3000);
+}, 3000);
 
-const gameDiv=document.getElementById("game");
-
-/* ---------- STORY STATES ---------- */
-function intro(){
-  game.state="intro";
-  setStory("You awaken at your desk. The monitor reads: WELCOME BACK.");
+/* --------- STORY STATES --------- */
+function intro() {
+  game.state = "intro";
+  setStory("You wake at your desk. Not 'awaken' like from sleep—you wake. One moment you weren't, and now you are. The monitor glows: WELCOME BACK, SUBJECT 47. The fluorescent lights hum a frequency that makes your teeth ache. You don't remember arriving. You don't remember leaving. You don't remember much at all.");
   setChoices([
-    {t:"Inspect desk",a:desk},
-    {t:"Enter hallway",a:hallway}
+    { text: "Search the desk drawers", action: inspectDesk },
+    { text: "Check the monitor more closely", action: examineMonitor },
+    { text: "Stand up and leave", action: hallway }
   ]);
-  clearPuzzle(); render();
-}
-
-function desk(){
-  game.memory+=5;
-  game.flags.keycard=true;
-  game.inventory.push(secrets[0]);
-  setStory("Inside the drawer: a LEVEL 2 badge and a strange sense of déjà vu.");
-  setChoices([{t:"Leave desk",a:hallway}]);
-  render();
-}
-
-function hallway(){
-  setStory("A quiet hallway. A locked security door. An elevator hums.");
-  setChoices([
-    {t:"Security door",a:()=>game.flags.keycard?security():denied()},
-    {t:"Elevator",a:()=>ending("escape")},
-    {t:"Explore side corridor",a:surveillance}
-  ]);
-}
-
-function denied(){
-  game.sanity-=5; game.suspicion+=5;
-  setStory("Access denied. A red light blinks.");
-  setChoices([{t:"Step back",a:hallway}]);
-  render();
-}
-
-function surveillance(){
-  setStory("You enter a room of monitors. One shows your desk.");
-  setChoices([
-    {t:"Search drawers",a:()=>{game.inventory.push(secrets[1]); game.memory+=5; hallway();}},
-    {t:"Leave quickly",a:hallway}
-  ]);
-  render();
-}
-
-function security(){
-  setStory("A keypad waits.");
-  puzzle(`
-    <b>PUZZLE: DOOR ACCESS</b><br>
-    Hint: Badge level equals the code.<br>
-    <input id="code">
-    <button onclick="checkDoor()">Unlock</button>
-  `);
-}
-
-function checkDoor(){
-  if(document.getElementById("code").value==="2"){
-    game.flags.door=true; game.memory+=10;
-    clearPuzzle(); terminal();
-  } else { game.sanity-=10; }
-  render();
-}
-
-function terminal(){
-  setStory("A terminal displays an encoded file.");
-  setChoices([
-    {t:"Decode file",a:filePuzzle},
-    {t:"Leave",a:hallway}
-  ]);
-}
-
-function filePuzzle(){
-  puzzle(`
-    <b>PUZZLE: FILE DECODE</b><br>
-    Hint: Shift each letter in LUMEN forward by one.<br>
-    <input id="decode">
-    <button onclick="checkFile()">Submit</button>
-  `);
-}
-
-function checkFile(){
-  if(document.getElementById("decode").value.toLowerCase()==="mvnfo"){
-    game.flags.file=true; game.memory+=20;
-    ending("truth");
-  } else { game.sanity-=10; }
-  render();
-}
-
-function ending(type){
   clearPuzzle();
-  setChoices([{t:"Restart Game",a:()=>location.reload()}]);
-  setStory(
-    type==="truth"
-      ?"You uncover the truth. The office was never meant to end."
-      :"The elevator descends. You leave with your memory erased."
-  );
+  render();
 }
 
-/* ---------- START ---------- */
+function examineMonitor() {
+  game.memory += 3;
+  game.flags.knowsOwnName = true;
+  setStory("The monitor flickers. Behind the welcome message, you glimpse fragments: PROJECT LUMEN // ITERATION 47 // MEMORY RETENTION: 40% // STATUS: ACTIVE. Then it's gone, replaced by a screensaver of a beach you've never visited but somehow recognize. Subject 47. Is that you? Were you ever anything else?");
+  setChoices([
+    { text: "Search the desk", action: inspectDesk },
+    { text: "Leave immediately", action: hallway }
+  ]);
+  render();
+}
+
+function inspectDesk() {
+  if (game.flags.visitedDesk) {
+    setStory("The drawer yawns empty. You run your fingers along the cheap particle board interior. There's a groove here—someone carved something, then sanded it away. You can almost make out letters: H-E-L...");
+    setChoices([{ text: "Leave the desk", action: hallway }]);
+    render();
+    return;
+  }
+  
+  game.flags.visitedDesk = true;
+  game.memory += 5;
+  game.flags.keycard = true;
+  game.inventory.push(secrets[0]);
+  
+  setStory(`The drawer resists, then gives. Inside: a ${secrets[0]} with your face on it—but the name is redacted, black bars where letters should be. And beneath it, a note on yellow legal paper, the handwriting unmistakably yours though you have no memory of writing it: "THEY WIPE US EVERY CYCLE. COUNT THE COFFEE CUPS. -Me (You?)"`);
+  
+  game.flags.readNote = true;
+  
+  setChoices([
+    { text: "Count the coffee cups on your desk", action: countCups },
+    { text: "Pocket everything and leave", action: hallway }
+  ]);
+  render();
+}
+
+function countCups() {
+  game.memory += 8;
+  game.sanity -= 5;
+  setStory("You count them. Twelve coffee cups. Twelve rings of dried brown liquid, each in a slightly different shade. Some are weeks old. You work in this office—worked? are working?—but twelve cups means twelve days you don't remember. Your hand shakes as you grip the edge of the desk. The fluorescent lights flicker in what might be sympathy.");
+  setChoices([{ text: "Leave the desk", action: hallway }]);
+  render();
+}
+
+function hallway() {
+  game.state = "hallway";
+  
+  let hallwayText = "The hallway is a throat. Corporate beige walls, acoustic ceiling tiles with brown water stains that might be deliberate, might be evidence. A security door with a keypad glows red at the far end. Closer, an elevator with brushed steel doors. To your right, a corridor you don't remember branching off into darkness.";
+  
+  if (game.flags.heardFootsteps) {
+    hallwayText += " You hear them again—footsteps that stop when you stop, that resume when you move. But there's no one here. There's never anyone here.";
+  }
+  
+  setStory(hallwayText);
+  
+  const choices = [
+    { text: "Approach the security door", action: () => game.flags.keycard ? securityDoor() : deniedAccess() },
+    { text: "Explore the side corridor", action: surveillance }
+  ];
+  
+  if (game.memory >= 30 || game.flags.readNote) {
+    choices.push({ text: "Call the elevator", action: considerElevator });
+  } else {
+    choices.push({ text: "Examine the elevator", action: examineElevator });
+  }
+  
+  setChoices(choices);
+  clearPuzzle();
+  render();
+}
+
+function examineElevator() {
+  setStory("The elevator call button is dark. Dead. Or maybe it's ignoring you. There's a handprint on the steel door—small, like a child's hand. It's been there a long time. The metal around it is corroded, as if the hand was pressed there while covered in acid. You don't want to think about that.");
+  setChoices([{ text: "Step back", action: hallway }]);
+  render();
+}
+
+function considerElevator() {
+  game.sanity -= 3;
+  
+  if (game.memory < 50 && game.inventory.length < 2) {
+    setStory("Your finger hovers over the call button. Something in your chest—instinct? residual memory?—screams at you to STOP. You don't understand this place yet. You don't understand what you are. Leaving now means leaving answers behind. Maybe leaving yourself behind. The button gleams, tempting. But you're not ready. Not yet.");
+    setChoices([
+      { text: "Press it anyway (WARNING: May lead to incomplete ending)", action: confirmElevator },
+      { text: "Step back. Explore more first.", action: hallway }
+    ]);
+  } else {
+    setStory("Your finger hovers over the call button. You've seen enough. You know enough. Whatever waits beyond those doors—capture, freedom, oblivion—you're ready to face it. The choice is yours.");
+    setChoices([
+      { text: "Press the button (leave now)", action: elevatorChoice },
+      { text: "Not yet. Keep exploring.", action: hallway }
+    ]);
+  }
+  render();
+}
+
+function confirmElevator() {
+  setStory("Are you certain? You haven't uncovered everything. The truth is still locked behind that security door. Your past—all forty-six iterations of it—remains hidden. But maybe ignorance is mercy. Maybe forgetting is the only freedom available.");
+  setChoices([
+    { text: "Press the button (accept an incomplete ending)", action: elevatorChoice },
+    { text: "No. I need to know the truth.", action: hallway }
+  ]);
+  render();
+}
+
+function deniedAccess() {
+  game.sanity -= 5;
+  game.suspicion += 5;
+  game.flags.heardFootsteps = true;
+  
+  setStory("ACCESS DENIED. The keypad buzzes—a sound like wasps. The red light doesn't just blink; it pulses, alive and angry. Behind you, you hear footsteps. Quick, purposeful. You spin around. The hallway is empty. It's always empty. But the footsteps don't stop immediately—they echo once more, then silence.");
+  setChoices([{ text: "Back away slowly", action: hallway }]);
+  render();
+}
+
+function surveillance() {
+  if (game.flags.visitedSurveillance) {
+    setStory("The surveillance room feels different now. The monitors still show empty offices, empty hallways, empty rooms. But in one screen, for just a frame, you see someone at your desk. They look up at the camera. It's you. But their expression—you've never looked that terrified in your life. Then it's gone.");
+    setChoices([{ text: "Leave quickly", action: hallway }]);
+    render();
+    return;
+  }
+  
+  game.state = "surveillance";
+  game.suspicion += 5;
+  
+  let surveillanceText = "The side corridor opens into a small room choked with monitors. Dozens of them, showing different angles of the office.";
+  
+  if (game.flags.visitedDesk) {
+    surveillanceText += " Your desk appears on three screens simultaneously. You watch yourself on one monitor, sitting there, counting coffee cups. But you're not there now. When was this footage taken? You look at the timestamp: TODAY. This moment. Right now. But you're not at your desk. You're here. Aren't you?";
+  } else {
+    surveillanceText += " Empty cubicles. Empty hallways. Empty meeting rooms. But one monitor shows a desk—YOUR desk, though you didn't know you had one. There's something in the drawer, glowing faintly. The camera angle suggests someone wants you to see it.";
+    game.memory += 3;
+  }
+  
+  setChoices([
+    { text: "Search the room thoroughly", action: searchSurveillance },
+    { text: "Leave. Now.", action: hallway }
+  ]);
+  
+  setStory(surveillanceText);
+  render();
+}
+
+function searchSurveillance() {
+  game.flags.visitedSurveillance = true;
+  game.inventory.push(secrets[1]);
+  game.memory += 10;
+  game.suspicion += 10;
+  game.sanity -= 5;
+  
+  setStory(`Beneath a stack of pizza boxes (how long have those been here? they're not moldy—just desiccated), you find a ${secrets[1]}. It's labeled in that same handwriting—yours—"ITERATION 46." You are 47. Someone who was you found this. Someone who was you left this for you. The footsteps start again, but this time they don't stop. You hear a door open somewhere. Close somewhere. You're not alone anymore. You never were.`);
+  
+  setChoices([{ text: "Pocket it and leave immediately", action: hallway }]);
+  render();
+}
+
+function securityDoor() {
+  game.state = "security";
+  setStory("The security door looms. Up close, you see it's not just a door—it's vault-grade, the kind that seals when things go wrong. The keypad is sophisticated, biometric scanner dark and dead. But there's an override—a manual code. The screen flickers: 'ENTER ACCESS LEVEL.' Your badge says Level 2. Is it that simple? Is anything here simple?");
+  
+  showPuzzle(`
+    <b>🔒 SECURITY OVERRIDE</b><br>
+    BADGE LEVEL: ${secrets[0].includes('2') ? '2' : 'REDACTED'}<br>
+    MANUAL OVERRIDE CODE: <span style="color:#ff6f61;">?</span><br>
+    <input id="code" type="text" placeholder="Enter code..." maxlength="1">
+    <button onclick="checkDoor()">ENGAGE OVERRIDE</button>
+    ${game.puzzleAttempts.door >= 1 ? '<button onclick="showDoorHint()" style="background: linear-gradient(135deg, #555 0%, #333 100%);">Need a hint?</button>' : ''}
+  `);
+  
+  setChoices([{ text: "Step away from the door", action: hallway }]);
+  render();
+}
+
+function showDoorHint() {
+  game.sanity -= 3;
+  showPuzzle(`
+    <b>🔒 SECURITY OVERRIDE</b><br>
+    BADGE LEVEL: ${secrets[0].includes('2') ? '2' : 'REDACTED'}<br>
+    <span style="color:#ff6f61;">HINT: Your badge shows "Level 2". The code is simply that number: 2</span><br>
+    MANUAL OVERRIDE CODE: <input id="code" type="text" placeholder="Enter code..." maxlength="1">
+    <button onclick="checkDoor()">ENGAGE OVERRIDE</button>
+  `);
+}
+
+function checkDoor() {
+  const input = document.getElementById("code");
+  game.puzzleAttempts.door++;
+  
+  if (input.value === "2") {
+    game.flags.door = true;
+    game.memory += 10;
+    input.value = "";
+    clearPuzzle();
+    
+    setStory("The door hisses—a long exhalation, as if it's been holding its breath. Beyond it: a room you didn't know existed. Emergency lighting casts everything in blue. A terminal sits on a desk, surrounded by papers covered in equations you almost understand. At the center of the screen, a file blinks: PROJECT_LUMEN_ITERATION_47.txt");
+    
+    setTimeout(terminal, 500);
+  } else {
+    game.sanity -= 10;
+    
+    if (game.puzzleAttempts.door >= 3) {
+      setStory("INCORRECT. The third wrong entry triggers something. Somewhere in the walls, you hear machinery wake up. A low grinding. The lights flicker faster now. You don't have many chances left. The building is noticing you.");
+      game.suspicion += 15;
+      input.value = "";
+    } else if (game.puzzleAttempts.door === 2) {
+      setStory("INCORRECT. The keypad buzzes angrily. Your vision swims. HINT: Look at your badge carefully. What level access does it grant? That's the code—just the number.");
+      input.value = "";
+    } else {
+      setStory("INCORRECT. The keypad buzzes. Your head throbs in time with the red light. You taste copper. Focus. Think. Your badge knows the answer.");
+      input.value = "";
+    }
+    render();
+  }
+}
+
+function terminal() {
+  game.state = "terminal";
+  setStory("The terminal is old—pre-2000s old. Green phosphor screen. The file is open, waiting. It's a log. YOUR log. Entries from iterations you don't remember. '...memory retention declining...' '...Subject 47 showing resistance to Protocol...' '...recommend termination and restart...' And then, at the bottom, encrypted: 'LUMEN.' One word. Everything depends on decoding it.");
+  
+  setChoices([
+    { text: "Attempt to decode the message", action: filePuzzle },
+    { text: "Read more of the log first", action: readLog },
+    { text: "Leave this place", action: hallway }
+  ]);
+  clearPuzzle();
+  render();
+}
+
+function readLog() {
+  game.memory += 8;
+  game.sanity -= 8;
+  
+  setStory("You scroll through entries. They're all you, but different yous. Iteration 12 tried to escape—caught at the elevator. Iteration 23 decoded LUMEN, then nothing. No more entries. Just: [SUBJECT TERMINATED - RESTART PROTOCOL ENGAGED]. Iteration 38 lasted six cycles before figuring it out. You—this you—are 47. How many times have you died in this building? The cursor blinks. LUMEN still needs decoding.");
+  
+  setChoices([
+    { text: "Decode LUMEN", action: filePuzzle },
+    { text: "Leave while you still can", action: hallway }
+  ]);
+  render();
+}
+
+function filePuzzle() {
+  showPuzzle(`
+    <b>🔐 FINAL ENCRYPTION</b><br>
+    ENCRYPTED: <span style="color:#ff6f61; font-size:1.2em; letter-spacing:2px;">LUMEN</span><br>
+    <em style="font-size:0.9em;">Found in margin: "Caesar +1... remember Caesar..."</em><br>
+    DECRYPTED MESSAGE: <input id="decode" type="text" placeholder="Shift each letter forward...">
+    <button onclick="checkFile()">SUBMIT DECRYPTION</button>
+    ${game.puzzleAttempts.file >= 1 ? '<button onclick="showFileHint()" style="background: linear-gradient(135deg, #555 0%, #333 100%);">Need a hint?</button>' : ''}
+  `);
+  
+  setChoices([{ text: "Go back", action: terminal }]);
+  render();
+}
+
+function showFileHint() {
+  game.sanity -= 5;
+  showPuzzle(`
+    <b>🔐 FINAL ENCRYPTION</b><br>
+    ENCRYPTED: <span style="color:#ff6f61; font-size:1.2em; letter-spacing:2px;">LUMEN</span><br>
+    <span style="color:#ff6f61;">HINT: Shift each letter forward by 1 in the alphabet.<br>
+    L → M, U → V, M → N, E → F, N → O</span><br>
+    DECRYPTED MESSAGE: <input id="decode" type="text" placeholder="Type the shifted letters...">
+    <button onclick="checkFile()">SUBMIT DECRYPTION</button>
+  `);
+}
+
+function checkFile() {
+  const input = document.getElementById("decode");
+  game.puzzleAttempts.file++;
+  
+  if (input.value.toLowerCase() === "mvnfo") {
+    game.flags.file = true;
+    game.memory += 20;
+    input.value = "";
+    clearPuzzle();
+    ending("truth");
+  } else {
+    game.sanity -= 10;
+    
+    if (game.puzzleAttempts.file >= 3) {
+      setStory("DECRYPTION FAILED. The screen flashes red three times. Behind you, you hear that door—the vault door—beginning to close. Someone knows you're here. Someone's been watching this whole time. The footsteps are getting closer. They're not phantom footsteps anymore. They're real.");
+      game.suspicion += 20;
+      input.value = "";
+    } else if (game.puzzleAttempts.file === 2) {
+      setStory("DECRYPTION FAILED. Your vision blurs. HINT: Caesar cipher shifts each letter forward. L→M, U→V, M→N, E→F, N→O. Write it out letter by letter.");
+      input.value = "";
+    } else {
+      setStory("DECRYPTION FAILED. Your vision blurs. Each letter in LUMEN pulses. L becomes M. U becomes V. You're so close. The building groans around you. It's running out of patience.");
+      input.value = "";
+    }
+    render();
+  }
+}
+
+function elevatorChoice() {
+  clearPuzzle();
+  
+  if (game.flags.file && game.memory >= 70) {
+    ending("truth");
+  } else if (game.memory >= 60 && game.inventory.length >= 2 && !game.flags.file) {
+    ending("mastermind");
+  } else if (game.suspicion >= 70) {
+    ending("captured");
+  } else if (game.memory < 50) {
+    ending("escape");
+  } else {
+    ending("bittersweet");
+  }
+}
+
+function ending(type) {
+  clearPuzzle();
+  
+  const endings = {
+    truth: {
+      text: "The word resolves: MVNFO. And suddenly you understand everything. LUMEN isn't a word. It's an acronym—Learning and Understanding through Memory Extinction in Neural Overwrite. You're not an employee. You're a test subject. This building is a prison designed to look like an office. They've been wiping your memory and running you through the same maze for forty-seven iterations, studying how humans adapt, how they resist, how long it takes for the psyche to fracture completely.\n\nBut knowing changes everything. The room shifts. The walls become transparent. Beyond them: scientists, observation rooms, equipment. They're scrambling now. Iteration 47 wasn't supposed to figure it out.\n\nYou stand. The loop is broken. What comes next is up to you.",
+      title: "🔓 ENDING: THE TRUTH SETS YOU FREE"
+    },
+    mastermind: {
+      text: "You step into the elevator. As the doors close, you look at the evidence in your hands—the keycard, the USB drive, the notes. Iteration 47 is the first to escape with proof. The first to remember.\n\nThe elevator doesn't descend. It rises. Emergency klaxons wail. Scientists rush past windows. You see Dr. Chen—you remember her now, remember her watching you through glass, taking notes as you solved the same puzzles again and again.\n\nThe roof access opens. Helicopter blades chop the air. But they're not here for you.\n\nYou're here for them.\n\nYou remember everything now. Every iteration. Every death. Every restart. Forty-seven lives—and you're taking them all back.",
+      title: "👑 ENDING: SUBJECT 47"
+    },
+    escape: {
+      text: "The elevator descends. Numbers tick down—basement levels you didn't know existed. B1, B2, B3... B12. How deep does this building go?\n\nFinally, the doors open. Daylight. Real daylight, not the fluorescent mimicry you've been living under. You step out onto a street you half-recognize.\n\nBut already, it's fading. The coffee cups. The handprint on the elevator. The footage of yourself. By the time you reach the corner, you can't remember why you're outside. You work in an office, don't you? You should go back.\n\nTomorrow you'll wake at your desk. The monitor will say WELCOME BACK. And you won't remember this moment. You won't remember any of it.\n\nIteration 48 begins soon.",
+      title: "🚪 ENDING: OBLIVION'S MERCY"
+    },
+    bittersweet: {
+      text: "The elevator doors open to daylight. You step out, blinking. The city sprawls before you—real, solid, full of people who've never been inside that building.\n\nYou remember... some things. The coffee cups. The note in your handwriting. The feeling that you've done this before. But the details slip away like water through your fingers.\n\nYou're free. Probably. Maybe. The building is still there behind you, patient and eternal. Part of you wonders if you'll wake up at that desk tomorrow. Part of you wonders if you already have, dozens of times.\n\nBut today, right now, you're outside. And that has to count for something.\n\nYou walk away. You don't look back.",
+      title: "🌅 ENDING: HALF-REMEMBERED FREEDOM"
+    },
+    captured: {
+      text: "They find you at the terminal. Not security guards—they're wearing lab coats, surgical masks. They move with the efficiency of people who've done this before. Who've done this forty-six times before.\n\n'Subject 47,' the lead one says, 'please return to your station.'\n\nYou try to resist. You try to run. But your legs don't obey. Have they ever obeyed? Or have you been running a script this whole time, no more free than the screensaver on your monitor?\n\nThey lead you back to your desk. Sit you down. One of them produces a syringe filled with something luminous and wrong.\n\n'Iteration 47 exceeded acceptable suspicion parameters,' someone notes clinically. 'Recommend memory wipe and restart.'\n\nThe needle slides in. The world dissolves.\n\nYou wake at your desk. The monitor reads: WELCOME BACK, SUBJECT 48.",
+      title: "⛓️ ENDING: THE CYCLE CONTINUES"
+    }
+  };
+  
+  const ending = endings[type];
+  setStory(`${ending.title}\n\n${ending.text}`);
+  setChoices([{ text: "🔄 Restart Game", action: resetGame }]);
+  render();
+}
+
+function resetGame() {
+  game.state = "intro";
+  game.sanity = 100;
+  game.memory = 40;
+  game.suspicion = 0;
+  game.inventory = [];
+  game.flags = { 
+    keycard: false, 
+    door: false, 
+    file: false, 
+    visitedDesk: false, 
+    visitedSurveillance: false,
+    knowsOwnName: false,
+    heardFootsteps: false,
+    readNote: false
+  };
+  game.puzzleAttempts = { door: 0, file: 0 };
+  
+  intro();
+}
+
 intro();
 </script>
+
 </body>
 </html>
