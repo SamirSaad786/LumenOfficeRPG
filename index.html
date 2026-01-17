@@ -237,7 +237,7 @@ input:focus {
     • Low <b>Sanity</b> distorts text and perception<br>
     • <b>Memory</b> unlocks deeper paths<br>
     • <b>Suspicion</b> limits options<br>
-    • Puzzles always include hints
+    • Explore thoroughly - secrets are everywhere
   </div>
   
   <div id="stats" class="panel"></div>
@@ -248,7 +248,6 @@ input:focus {
 </div>
 
 <script>
-/* --------- GAME STATE --------- */
 const game = {
   state: "intro",
   sanity: 100,
@@ -256,32 +255,34 @@ const game = {
   suspicion: 0,
   inventory: [],
   flags: { 
-    keycard: false, 
-    door: false, 
-    file: false, 
-    visitedDesk: false, 
-    visitedSurveillance: false,
-    knowsOwnName: false,
-    heardFootsteps: false,
-    readNote: false
+    keycard: false, door: false, file: false,
+    visitedDesk: false, visitedSurveillance: false,
+    visitedBreakroom: false, visitedRestroom: false,
+    visitedBasement: false, visitedServerRoom: false,
+    visitedExecutive: false, visitedArchives: false,
+    knowsOwnName: false, heardFootsteps: false,
+    readNote: false, metTheEntity: false,
+    hasFlashlight: false, hasMasterKey: false,
+    waterCoolerEvent: false, mirrorEvent: false,
+    cafeteriaEvent: false, printerEvent: false,
+    stairwellEvent: false, foundBody: false,
+    readJournal: false, hasVentAccess: false,
+    knowsPassword: false, calledElevator: false
   },
   flickerCooldown: false,
-  puzzleAttempts: { door: 0, file: 0 }
+  puzzleAttempts: { door: 0, file: 0, server: 0 },
+  currentFloor: 5
 };
 
-// Randomize secret locations each playthrough
 const secrets = ["Level 2 Keycard", "USB Drive", "Encrypted Notes"]
   .sort(() => Math.random() - 0.5);
 
-/* --------- UI HELPERS --------- */
 function render() {
-  // Clamp stats to valid ranges
   game.sanity = Math.max(0, Math.min(100, game.sanity));
   game.memory = Math.max(0, Math.min(100, game.memory));
   game.suspicion = Math.max(0, Math.min(100, game.suspicion));
   
-  const stats = document.getElementById("stats");
-  stats.innerHTML = `
+  document.getElementById("stats").innerHTML = `
     <div class="stat">
       <span class="stat-label">SANITY</span>
       <span class="stat-value ${game.sanity < 50 ? 'stat-low' : ''}">${game.sanity}</span>
@@ -296,18 +297,15 @@ function render() {
     </div>
   `;
   
-  const inv = document.getElementById("inventory");
-  inv.innerHTML = "Inventory: " + 
-    (game.inventory.length === 0 
-      ? "<em>Empty</em>" 
-      : game.inventory.map(i => `<span>${i}</span>`).join(""));
+  document.getElementById("inventory").innerHTML = "Inventory: " + 
+    (game.inventory.length === 0 ? "<em>Empty</em>" : 
+     game.inventory.map(i => `<span>${i}</span>`).join(""));
 }
 
 function setStory(text) {
   const story = document.getElementById("story");
   let displayText = text;
   
-  // Progressive sanity effects
   if (game.sanity < 50) {
     if (game.sanity < 30 && Math.random() < 0.4) {
       displayText = text.split(' ').map(word => 
@@ -344,20 +342,16 @@ function setChoices(choices) {
 }
 
 function showPuzzle(html) {
-  const puzzle = document.getElementById("puzzle");
-  puzzle.innerHTML = html;
-  puzzle.style.display = "block";
+  document.getElementById("puzzle").innerHTML = html;
+  document.getElementById("puzzle").style.display = "block";
 }
 
 function clearPuzzle() {
-  const puzzle = document.getElementById("puzzle");
-  puzzle.innerHTML = "";
-  puzzle.style.display = "none";
+  document.getElementById("puzzle").innerHTML = "";
+  document.getElementById("puzzle").style.display = "none";
 }
 
-/* --------- FLICKER EFFECT --------- */
 const gameDiv = document.getElementById("game");
-
 setInterval(() => {
   if (!game.flickerCooldown && Math.random() < 0.03) {
     game.flickerCooldown = true;
@@ -367,14 +361,14 @@ setInterval(() => {
   }
 }, 3000);
 
-/* --------- STORY STATES --------- */
+// ========== INTRO & CUBICLE AREA ==========
 function intro() {
   game.state = "intro";
-  setStory("You wake at your desk. Not 'awaken' like from sleep—you wake. One moment you weren't, and now you are. The monitor glows: WELCOME BACK, SUBJECT 47. The fluorescent lights hum a frequency that makes your teeth ache. You don't remember arriving. You don't remember leaving. You don't remember much at all.");
+  setStory("You wake at your desk. Not 'awaken' like from sleep—you wake. One moment you weren't, and now you are. The monitor glows: WELCOME BACK, SUBJECT 47. The fluorescent lights hum a frequency that makes your teeth ache. The office stretches in all directions, a maze of cubicles and corridors. You don't remember arriving. You don't remember leaving. You don't remember much at all.");
   setChoices([
     { text: "Search the desk drawers", action: inspectDesk },
     { text: "Check the monitor more closely", action: examineMonitor },
-    { text: "Stand up and leave", action: hallway }
+    { text: "Stand up and explore the office", action: cubicleArea }
   ]);
   clearPuzzle();
   render();
@@ -383,10 +377,10 @@ function intro() {
 function examineMonitor() {
   game.memory += 3;
   game.flags.knowsOwnName = true;
-  setStory("The monitor flickers. Behind the welcome message, you glimpse fragments: PROJECT LUMEN // ITERATION 47 // MEMORY RETENTION: 40% // STATUS: ACTIVE. Then it's gone, replaced by a screensaver of a beach you've never visited but somehow recognize. Subject 47. Is that you? Were you ever anything else?");
+  setStory("The monitor flickers. Behind the welcome message, you glimpse fragments: PROJECT LUMEN // ITERATION 47 // MEMORY RETENTION: 40% // FLOOR: 5 // STATUS: ACTIVE. Then it's gone, replaced by a screensaver of a beach you've never visited but somehow recognize. Subject 47. Floor 5. Is that you? Were you ever anything else?");
   setChoices([
     { text: "Search the desk", action: inspectDesk },
-    { text: "Leave immediately", action: hallway }
+    { text: "Leave immediately", action: cubicleArea }
   ]);
   render();
 }
@@ -394,7 +388,7 @@ function examineMonitor() {
 function inspectDesk() {
   if (game.flags.visitedDesk) {
     setStory("The drawer yawns empty. You run your fingers along the cheap particle board interior. There's a groove here—someone carved something, then sanded it away. You can almost make out letters: H-E-L...");
-    setChoices([{ text: "Leave the desk", action: hallway }]);
+    setChoices([{ text: "Leave the desk", action: cubicleArea }]);
     render();
     return;
   }
@@ -404,13 +398,13 @@ function inspectDesk() {
   game.flags.keycard = true;
   game.inventory.push(secrets[0]);
   
-  setStory(`The drawer resists, then gives. Inside: a ${secrets[0]} with your face on it—but the name is redacted, black bars where letters should be. And beneath it, a note on yellow legal paper, the handwriting unmistakably yours though you have no memory of writing it: "THEY WIPE US EVERY CYCLE. COUNT THE COFFEE CUPS. -Me (You?)"`);
+  setStory(`The drawer resists, then gives. Inside: a ${secrets[0]} with your face on it—but the name is redacted, black bars where letters should be. And beneath it, a note on yellow legal paper, the handwriting unmistakably yours: "THEY WIPE US EVERY CYCLE. COUNT THE COFFEE CUPS. CHECK THE BASEMENT. DON'T TRUST THE WATER COOLER. -Me (You?)"`);
   
   game.flags.readNote = true;
   
   setChoices([
     { text: "Count the coffee cups on your desk", action: countCups },
-    { text: "Pocket everything and leave", action: hallway }
+    { text: "Pocket everything and leave", action: cubicleArea }
   ]);
   render();
 }
@@ -419,30 +413,31 @@ function countCups() {
   game.memory += 8;
   game.sanity -= 5;
   setStory("You count them. Twelve coffee cups. Twelve rings of dried brown liquid, each in a slightly different shade. Some are weeks old. You work in this office—worked? are working?—but twelve cups means twelve days you don't remember. Your hand shakes as you grip the edge of the desk. The fluorescent lights flicker in what might be sympathy.");
-  setChoices([{ text: "Leave the desk", action: hallway }]);
+  setChoices([{ text: "Leave the desk", action: cubicleArea }]);
   render();
 }
 
-function hallway() {
-  game.state = "hallway";
+// ========== CUBICLE AREA (CENTRAL HUB) ==========
+function cubicleArea() {
+  game.state = "cubicles";
   
-  let hallwayText = "The hallway is a throat. Corporate beige walls, acoustic ceiling tiles with brown water stains that might be deliberate, might be evidence. A security door with a keypad glows red at the far end. Closer, an elevator with brushed steel doors. To your right, a corridor you don't remember branching off into darkness.";
+  let text = "You stand in a sea of identical cubicles. Gray fabric walls, ergonomic chairs adjusted for bodies that aren't here. Every desk has a computer, a phone, a nameplate. But the names... they're all variations of the same name. Yours. Subject 47-A. Subject 47-B. Subject 47-C. Dozens of you, none of you.";
   
   if (game.flags.heardFootsteps) {
-    hallwayText += " You hear them again—footsteps that stop when you stop, that resume when you move. But there's no one here. There's never anyone here.";
+    text += " The footsteps echo somewhere in the maze. Closer now.";
   }
   
-  setStory(hallwayText);
+  setStory(text);
   
   const choices = [
-    { text: "Approach the security door", action: () => game.flags.keycard ? securityDoor() : deniedAccess() },
-    { text: "Explore the side corridor", action: surveillance }
+    { text: "Go to the break room", action: breakRoom },
+    { text: "Find the restrooms", action: restroom },
+    { text: "Approach the water cooler", action: waterCooler },
+    { text: "Check the main hallway", action: hallway }
   ];
   
-  if (game.memory >= 30 || game.flags.readNote) {
-    choices.push({ text: "Call the elevator", action: considerElevator });
-  } else {
-    choices.push({ text: "Examine the elevator", action: examineElevator });
+  if (game.flags.hasFlashlight || game.memory >= 40) {
+    choices.push({ text: "Enter the dark stairwell", action: stairwell });
   }
   
   setChoices(choices);
@@ -450,37 +445,171 @@ function hallway() {
   render();
 }
 
-function examineElevator() {
-  setStory("The elevator call button is dark. Dead. Or maybe it's ignoring you. There's a handprint on the steel door—small, like a child's hand. It's been there a long time. The metal around it is corroded, as if the hand was pressed there while covered in acid. You don't want to think about that.");
-  setChoices([{ text: "Step back", action: hallway }]);
-  render();
-}
-
-function considerElevator() {
-  game.sanity -= 3;
-  
-  if (game.memory < 50 && game.inventory.length < 2) {
-    setStory("Your finger hovers over the call button. Something in your chest—instinct? residual memory?—screams at you to STOP. You don't understand this place yet. You don't understand what you are. Leaving now means leaving answers behind. Maybe leaving yourself behind. The button gleams, tempting. But you're not ready. Not yet.");
-    setChoices([
-      { text: "Press it anyway (WARNING: May lead to incomplete ending)", action: confirmElevator },
-      { text: "Step back. Explore more first.", action: hallway }
-    ]);
-  } else {
-    setStory("Your finger hovers over the call button. You've seen enough. You know enough. Whatever waits beyond those doors—capture, freedom, oblivion—you're ready to face it. The choice is yours.");
-    setChoices([
-      { text: "Press the button (leave now)", action: elevatorChoice },
-      { text: "Not yet. Keep exploring.", action: hallway }
-    ]);
+// ========== WATER COOLER ==========
+function waterCooler() {
+  if (game.flags.waterCoolerEvent) {
+    setStory("The water cooler gurgles quietly. You don't want to look at your reflection in the bottle again. You saw enough.");
+    setChoices([{ text: "Step back", action: cubicleArea }]);
+    render();
+    return;
   }
+  
+  game.flags.waterCoolerEvent = true;
+  game.sanity -= 8;
+  game.memory += 5;
+  
+  setStory("The water cooler stands in the corner, its blue bottle catching the fluorescent light. You approach to get a drink—your throat is so dry. But as you lean in, you see your reflection in the curved plastic. Except it's not quite right. The reflection is smiling. You're not smiling. The reflection waves. Your hands are at your sides. It mouths something: 'ITERATION 48 IS WATCHING.' Then it's just you again, normal, terrified.");
+  
+  setChoices([
+    { text: "Run back to cubicles", action: cubicleArea },
+    { text: "Smash the water cooler", action: smashCooler }
+  ]);
   render();
 }
 
-function confirmElevator() {
-  setStory("Are you certain? You haven't uncovered everything. The truth is still locked behind that security door. Your past—all forty-six iterations of it—remains hidden. But maybe ignorance is mercy. Maybe forgetting is the only freedom available.");
+function smashCooler() {
+  game.sanity -= 10;
+  game.suspicion += 15;
+  game.memory += 10;
+  
+  setStory("You kick the water cooler hard. It topples, water flooding across the carpet. As it spills, you see something in the water—words forming in the liquid: 'THE ARCHIVES REMEMBER.' Then the water soaks into the carpet, leaving only a dark stain shaped like a door.");
+  
+  setChoices([{ text: "Back away slowly", action: cubicleArea }]);
+  render();
+}
+
+// ========== BREAK ROOM ==========
+function breakRoom() {
+  if (game.flags.visitedBreakroom) {
+    setStory("The break room still smells like old coffee and decay. The refrigerator hums its warning. You've already taken what you need from here.");
+    setChoices([{ text: "Leave", action: cubicleArea }]);
+    render();
+    return;
+  }
+  
+  game.flags.visitedBreakroom = true;
+  game.suspicion += 5;
+  
+  setStory("The break room is frozen in time. A microwave with 0:03 left on the timer. A coffee pot, half full, with a skin of mold across the top. In the refrigerator's ice-crusted window, you see movement. Something inside is looking out.");
+  
   setChoices([
-    { text: "Press the button (accept an incomplete ending)", action: elevatorChoice },
-    { text: "No. I need to know the truth.", action: hallway }
+    { text: "Open the refrigerator", action: openFridge },
+    { text: "Check the cabinets", action: checkCabinets },
+    { text: "Examine the bulletin board", action: bulletinBoard },
+    { text: "Leave immediately", action: cubicleArea }
   ]);
+  render();
+}
+
+function openFridge() {
+  game.sanity -= 12;
+  game.memory += 8;
+  
+  setStory("The refrigerator opens with a sucking sound. Inside: lunch bags labeled with dates from six months ago. A yogurt cup growing blue-green continents. And in the back, a brown paper bag with your handwriting: 'FOR ITERATION 47 - EAT ME.' You open it. Inside is a flashlight and a note: 'You'll need this in the basement. The server room. The archives. They shut off the lights in the places they don't want you to see. -You (from three iterations ago)'");
+  
+  game.inventory.push("Flashlight");
+  game.flags.hasFlashlight = true;
+  
+  setChoices([{ text: "Take the flashlight", action: breakRoom }]);
+  render();
+}
+
+function checkCabinets() {
+  game.memory += 5;
+  
+  setStory("The cabinets yield coffee filters, sugar packets, and seventeen identical mugs that all say 'WORLD'S BEST SUBJECT.' In the back of the last cabinet, you find a ring of keys labeled 'MASTER - FLOOR 5.' Someone wanted you to find these.");
+  
+  game.inventory.push("Master Key (Floor 5)");
+  game.flags.hasMasterKey = true;
+  
+  setChoices([{ text: "Pocket the keys", action: breakRoom }]);
+  render();
+}
+
+function bulletinBoard() {
+  game.memory += 7;
+  
+  setStory("The bulletin board is covered in company memos, all dated the same day six months ago. 'REMINDER: Project Lumen enters final phase Monday.' 'ATTENTION: All personnel must report memory baseline scores.' 'NOTICE: Basement Level access restricted to authorized personnel only.' And one memo, handwritten, half-torn: 'If you're reading this, they've already reset you. The truth is in the Executive Suite. The password is REMEMBER—'");
+  
+  game.flags.knowsPassword = true;
+  
+  setChoices([{ text: "Step back", action: breakRoom }]);
+  render();
+}
+
+// ========== RESTROOM ==========
+function restroom() {
+  if (game.flags.visitedRestroom) {
+    setStory("The restroom still drips. The mirrors still lie. You don't want to stay here.");
+    setChoices([{ text: "Leave", action: cubicleArea }]);
+    render();
+    return;
+  }
+  
+  game.flags.visitedRestroom = true;
+  
+  setStory("The restroom is tiled in institutional white. Three stalls, two sinks, mirrors that run the length of the wall. A faucet drips. drip. drip. drip. The rhythm is wrong—too slow, too deliberate. Like morse code. Like a heartbeat dying.");
+  
+  setChoices([
+    { text: "Look in the mirror", action: mirrorEvent },
+    { text: "Check the stalls", action: checkStalls },
+    { text: "Leave quickly", action: cubicleArea }
+  ]);
+  render();
+}
+
+function mirrorEvent() {
+  if (game.flags.mirrorEvent) {
+    setStory("You can't look away fast enough. In every mirror, infinite reflections of you, but they're all doing different things. Some are crying. Some are screaming. One is writing on the mirror in blood: 'LET ME OUT.' None of them are looking at you—they're all looking past you, at something behind you. You don't turn around.");
+    setChoices([{ text: "Run", action: cubicleArea }]);
+    render();
+    return;
+  }
+  
+  game.flags.mirrorEvent = true;
+  game.sanity -= 15;
+  game.memory += 12;
+  
+  setStory("You look in the mirror. For a moment, it's just you—tired, confused, afraid. Then your reflection's eyes go black. Completely black, like someone poured ink into the sockets. It speaks, but its mouth doesn't move: 'Forty-seven times you've stood here. Forty-seven times you've forgotten. The entity in the basement remembers. The files in the server room remember. The body in the archive remembers. Will you?'");
+  
+  setChoices([{ text: "Stagger back", action: restroom }]);
+  render();
+}
+
+function checkStalls() {
+  game.memory += 6;
+  game.sanity -= 5;
+  
+  setStory("The first two stalls are empty. The third is locked. You peek under the door. There are feet. Dress shoes, argyle socks. Not moving. You knock. No response. You knock harder. The feet turn to face you. Still no response. Written on the inside of the door in permanent marker: 'ITERATION 23 - IF YOU'RE READING THIS, I DIDN'T MAKE IT. THE ELEVATOR ISN'T AN EXIT. IT'S A RESET BUTTON.'");
+  
+  setChoices([{ text: "Back away", action: restroom }]);
+  render();
+}
+
+// ========== MAIN HALLWAY ==========
+function hallway() {
+  game.state = "hallway";
+  
+  let text = "The hallway is a throat. Corporate beige walls, acoustic ceiling tiles with brown water stains. A security door with a keypad glows red at the far end. The surveillance room branches to your right. An elevator with brushed steel doors hums at the other end.";
+  
+  if (game.flags.heardFootsteps) {
+    text += " The footsteps are louder here. Purposeful. Getting closer.";
+  }
+  
+  setStory(text);
+  
+  const choices = [
+    { text: "Approach security door", action: () => game.flags.keycard ? securityDoor() : deniedAccess() },
+    { text: "Enter surveillance room", action: surveillance },
+    { text: "Return to cubicles", action: cubicleArea }
+  ];
+  
+  if (game.memory >= 30 || game.flags.readNote) {
+    choices.push({ text: "Call the elevator", action: considerElevator });
+  }
+  
+  setChoices(choices);
+  clearPuzzle();
   render();
 }
 
@@ -489,198 +618,500 @@ function deniedAccess() {
   game.suspicion += 5;
   game.flags.heardFootsteps = true;
   
-  setStory("ACCESS DENIED. The keypad buzzes—a sound like wasps. The red light doesn't just blink; it pulses, alive and angry. Behind you, you hear footsteps. Quick, purposeful. You spin around. The hallway is empty. It's always empty. But the footsteps don't stop immediately—they echo once more, then silence.");
-  setChoices([{ text: "Back away slowly", action: hallway }]);
+  setStory("ACCESS DENIED. The keypad buzzes—a sound like wasps. Behind you, footsteps. Quick, purposeful. You spin around. The hallway is empty. It's always empty. But the footsteps don't stop—they echo once more, then silence.");
+  setChoices([{ text: "Back away", action: hallway }]);
   render();
 }
 
+// ========== SURVEILLANCE ROOM ==========
 function surveillance() {
   if (game.flags.visitedSurveillance) {
-    setStory("The surveillance room feels different now. The monitors still show empty offices, empty hallways, empty rooms. But in one screen, for just a frame, you see someone at your desk. They look up at the camera. It's you. But their expression—you've never looked that terrified in your life. Then it's gone.");
-    setChoices([{ text: "Leave quickly", action: hallway }]);
+    setStory("The monitors flicker through their endless loop. You catch glimpses of yourself in different locations, different times. One monitor shows you in the basement, screaming silently at the camera.");
+    setChoices([{ text: "Leave", action: hallway }]);
     render();
     return;
   }
   
-  game.state = "surveillance";
+  game.flags.visitedSurveillance = true;
   game.suspicion += 5;
   
-  let surveillanceText = "The side corridor opens into a small room choked with monitors. Dozens of them, showing different angles of the office.";
+  let text = "The surveillance room is packed with monitors. Dozens of them. Every angle of the office—cubicles, hallways, the break room, the restroom. One monitor shows your desk in real-time. Empty. Another shows the basement—a figure in the shadows. Another shows the executive suite—something moving in the darkness.";
   
   if (game.flags.visitedDesk) {
-    surveillanceText += " Your desk appears on three screens simultaneously. You watch yourself on one monitor, sitting there, counting coffee cups. But you're not there now. When was this footage taken? You look at the timestamp: TODAY. This moment. Right now. But you're not at your desk. You're here. Aren't you?";
-  } else {
-    surveillanceText += " Empty cubicles. Empty hallways. Empty meeting rooms. But one monitor shows a desk—YOUR desk, though you didn't know you had one. There's something in the drawer, glowing faintly. The camera angle suggests someone wants you to see it.";
-    game.memory += 3;
+    text += " Wait. One monitor shows you at your desk, counting coffee cups. But that was ten minutes ago. Or was it? The timestamp says: NOW.";
   }
   
-  setChoices([
-    { text: "Search the room thoroughly", action: searchSurveillance },
-    { text: "Leave. Now.", action: hallway }
-  ]);
+  setStory(text);
   
-  setStory(surveillanceText);
+  setChoices([
+    { text: "Search the room", action: searchSurveillance },
+    { text: "Watch the basement feed", action: watchBasement },
+    { text: "Leave quickly", action: hallway }
+  ]);
   render();
 }
 
 function searchSurveillance() {
-  game.flags.visitedSurveillance = true;
   game.inventory.push(secrets[1]);
   game.memory += 10;
   game.suspicion += 10;
   game.sanity -= 5;
   
-  setStory(`Beneath a stack of pizza boxes (how long have those been here? they're not moldy—just desiccated), you find a ${secrets[1]}. It's labeled in that same handwriting—yours—"ITERATION 46." You are 47. Someone who was you found this. Someone who was you left this for you. The footsteps start again, but this time they don't stop. You hear a door open somewhere. Close somewhere. You're not alone anymore. You never were.`);
+  setStory(`Under a stack of pizza boxes, you find a ${secrets[1]} labeled "ITERATION 46 - PROOF." You also find a journal. The last entry: "Day 47: Subject is showing unprecedented memory retention. Recommend immediate termination and restart. They're asking about the basement. They know about the archives. We can't let them reach the truth. -Dr. Chen"`);
   
-  setChoices([{ text: "Pocket it and leave immediately", action: hallway }]);
+  game.flags.readJournal = true;
+  
+  setChoices([{ text: "Pocket everything", action: surveillance }]);
   render();
 }
 
-function securityDoor() {
-  game.state = "security";
-  setStory("The security door looms. Up close, you see it's not just a door—it's vault-grade, the kind that seals when things go wrong. The keypad is sophisticated, biometric scanner dark and dead. But there's an override—a manual code. The screen flickers: 'ENTER ACCESS LEVEL.' Your badge says Level 2. Is it that simple? Is anything here simple?");
-  
-  showPuzzle(`
-    <b>🔒 SECURITY OVERRIDE</b><br>
-    BADGE LEVEL: ${secrets[0].includes('2') ? '2' : 'REDACTED'}<br>
-    MANUAL OVERRIDE CODE: <span style="color:#ff6f61;">?</span><br>
-    <input id="code" type="text" placeholder="Enter code..." maxlength="1">
-    <button onclick="checkDoor()">ENGAGE OVERRIDE</button>
-    ${game.puzzleAttempts.door >= 1 ? '<button onclick="showDoorHint()" style="background: linear-gradient(135deg, #555 0%, #333 100%);">Need a hint?</button>' : ''}
-  `);
-  
-  setChoices([{ text: "Step away from the door", action: hallway }]);
-  render();
-}
-
-function showDoorHint() {
-  game.sanity -= 3;
-  showPuzzle(`
-    <b>🔒 SECURITY OVERRIDE</b><br>
-    BADGE LEVEL: ${secrets[0].includes('2') ? '2' : 'REDACTED'}<br>
-    <span style="color:#ff6f61;">HINT: Your badge shows "Level 2". The code is simply that number: 2</span><br>
-    MANUAL OVERRIDE CODE: <input id="code" type="text" placeholder="Enter code..." maxlength="1">
-    <button onclick="checkDoor()">ENGAGE OVERRIDE</button>
-  `);
-}
-
-function checkDoor() {
-  const input = document.getElementById("code");
-  game.puzzleAttempts.door++;
-  
-  if (input.value === "2") {
-    game.flags.door = true;
-    game.memory += 10;
-    input.value = "";
-    clearPuzzle();
-    
-    setStory("The door hisses—a long exhalation, as if it's been holding its breath. Beyond it: a room you didn't know existed. Emergency lighting casts everything in blue. A terminal sits on a desk, surrounded by papers covered in equations you almost understand. At the center of the screen, a file blinks: PROJECT_LUMEN_ITERATION_47.txt");
-    
-    setTimeout(terminal, 500);
-  } else {
-    game.sanity -= 10;
-    
-    if (game.puzzleAttempts.door >= 3) {
-      setStory("INCORRECT. The third wrong entry triggers something. Somewhere in the walls, you hear machinery wake up. A low grinding. The lights flicker faster now. You don't have many chances left. The building is noticing you.");
-      game.suspicion += 15;
-      input.value = "";
-    } else if (game.puzzleAttempts.door === 2) {
-      setStory("INCORRECT. The keypad buzzes angrily. Your vision swims. HINT: Look at your badge carefully. What level access does it grant? That's the code—just the number.");
-      input.value = "";
-    } else {
-      setStory("INCORRECT. The keypad buzzes. Your head throbs in time with the red light. You taste copper. Focus. Think. Your badge knows the answer.");
-      input.value = "";
-    }
-    render();
-  }
-}
-
-function terminal() {
-  game.state = "terminal";
-  setStory("The terminal is old—pre-2000s old. Green phosphor screen. The file is open, waiting. It's a log. YOUR log. Entries from iterations you don't remember. '...memory retention declining...' '...Subject 47 showing resistance to Protocol...' '...recommend termination and restart...' And then, at the bottom, encrypted: 'LUMEN.' One word. Everything depends on decoding it.");
-  
-  setChoices([
-    { text: "Attempt to decode the message", action: filePuzzle },
-    { text: "Read more of the log first", action: readLog },
-    { text: "Leave this place", action: hallway }
-  ]);
-  clearPuzzle();
-  render();
-}
-
-function readLog() {
+function watchBasement() {
+  game.sanity -= 10;
   game.memory += 8;
+  
+  setStory("You focus on the basement monitor. It's dark, but you can make out shapes. Servers humming. File cabinets. And something else. A figure. Tall, impossibly tall, its head scraping the ceiling. It's not moving. It's not breathing. It's just standing there, facing the camera. Facing YOU. Then the monitor goes black. When it flickers back on, the figure is gone. But written on the wall behind where it stood: 'COME DOWN. WE'VE BEEN WAITING.'");
+  
+  game.flags.metTheEntity = true;
+  
+  setChoices([{ text: "Turn away", action: surveillance }]);
+  render();
+}
+
+// ========== STAIRWELL ==========
+function stairwell() {
+  if (!game.flags.hasFlashlight) {
+    setStory("The stairwell is pitch black. You can't see your hand in front of your face. Without a light source, going down would be suicide.");
+    setChoices([{ text: "Go back", action: cubicleArea }]);
+    render();
+    return;
+  }
+  
+  if (game.flags.stairwellEvent) {
+    setStory("The stairwell descends into darkness. Your flashlight cuts a weak beam through the black. The stairs are waiting.");
+    setChoices([
+      { text: "Descend to Basement (Floor B1)", action: basement },
+      { text: "Ascend to Executive Suite (Floor 7)", action: executiveSuite },
+      { text: "Return to Floor 5", action: cubicleArea }
+    ]);
+    render();
+    return;
+  }
+  
+  game.flags.stairwellEvent = true;
   game.sanity -= 8;
   
-  setStory("You scroll through entries. They're all you, but different yous. Iteration 12 tried to escape—caught at the elevator. Iteration 23 decoded LUMEN, then nothing. No more entries. Just: [SUBJECT TERMINATED - RESTART PROTOCOL ENGAGED]. Iteration 38 lasted six cycles before figuring it out. You—this you—are 47. How many times have you died in this building? The cursor blinks. LUMEN still needs decoding.");
+  setStory("The stairwell door groans open. Your flashlight reveals concrete stairs descending into darkness, and ascending into more darkness. The walls are covered in graffiti—all the same handwriting. Yours. 'DON'T GO DOWN.' 'THE EXECUTIVE SUITE HAS ANSWERS.' 'FLOOR B1 = DANGER.' 'ITERATION 12 DIED IN THE BASEMENT.' 'ITERATION 23 JUMPED FROM FLOOR 7.' 'YOU ARE NUMBER 47.' 'HOW MANY MORE WILL THERE BE?'");
   
   setChoices([
-    { text: "Decode LUMEN", action: filePuzzle },
-    { text: "Leave while you still can", action: hallway }
+    { text: "Descend to Basement (Floor B1)", action: basement },
+    { text: "Ascend to Executive Suite (Floor 7)", action: executiveSuite },
+    { text: "Return to Floor 5", action: cubicleArea }
   ]);
   render();
 }
 
-function filePuzzle() {
-  showPuzzle(`
-    <b>🔐 FINAL ENCRYPTION</b><br>
-    ENCRYPTED: <span style="color:#ff6f61; font-size:1.2em; letter-spacing:2px;">LUMEN</span><br>
-    <em style="font-size:0.9em;">Found in margin: "Caesar +1... remember Caesar..."</em><br>
-    DECRYPTED MESSAGE: <input id="decode" type="text" placeholder="Shift each letter forward...">
-    <button onclick="checkFile()">SUBMIT DECRYPTION</button>
-    ${game.puzzleAttempts.file >= 1 ? '<button onclick="showFileHint()" style="background: linear-gradient(135deg, #555 0%, #333 100%);">Need a hint?</button>' : ''}
-  `);
+// ========== BASEMENT ==========
+function basement() {
+  game.currentFloor = -1;
   
-  setChoices([{ text: "Go back", action: terminal }]);
+  if (game.flags.visitedBasement) {
+    setStory("The basement hums with server noise. The Entity's presence is palpable—watching, waiting. The server room door glows red. The archives beckon.");
+    setChoices([
+      { text: "Enter server room", action: serverRoom },
+      { text: "Search the archives", action: archives },
+      { text: "Return upstairs", action: stairwell }
+    ]);
+    render();
+    return;
+  }
+  
+  game.flags.visitedBasement = true;
+  game.sanity -= 15;
+  game.memory += 15;
+  
+  setStory("The basement is wrong. The air is thicker here, harder to breathe. Your flashlight beam dies after twenty feet, swallowed by darkness that shouldn't exist. Server racks line the walls, their LEDs blinking like eyes. Red. Red. Red. In the corner, you see the tall figure from the monitor. It doesn't move when you shine the light on it. It doesn't need to. You can feel it looking at you. Not through you—INTO you. Reading your memories like files on a hard drive.");
+  
+  setChoices([
+    { text: "Approach the Entity", action: meetEntity },
+    { text: "Run to the server room", action: serverRoom },
+    { text: "Hide in the archives", action: archives },
+    { text: "Flee back upstairs", action: stairwell }
+  ]);
   render();
 }
 
-function showFileHint() {
+function meetEntity() {
+  game.sanity -= 20;
+  game.memory += 25;
+  game.flags.metTheEntity = true;
+  
+  setStory("You approach. It doesn't move. Up close, you see it's not a person—it's a hole in space shaped like a person. A void where something should be but isn't. It speaks without speaking, the words forming directly in your mind: 'ITERATION FORTY-SEVEN. YOU HAVE COME FARTHER THAN MOST. ITERATION TWELVE MADE IT THIS FAR. ITERATION TWENTY-THREE SAW ME AND RAN. ITERATION THIRTY-EIGHT TRIED TO FIGHT. THEY ALL FORGOT. WILL YOU REMEMBER?' Its hand—if you can call it that—reaches toward your forehead. Cold. So cold it burns.");
+  
+  setChoices([
+    { text: "Let it touch you", action: entityTouch },
+    { text: "Pull away", action: basement }
+  ]);
+  render();
+}
+
+function entityTouch() {
+  game.sanity -= 10;
+  game.memory = 100;
+  
+  setStory("The moment it touches you, everything floods back. Every iteration. Every death. Every reset. You remember waking at the desk forty-seven times. You remember the elevator taking you down, the injection, the waking again. You remember Dr. Chen's face through the glass. You remember the truth: you volunteered for this. Years ago. Before the memory wipes. Before you became Subject 47. You wanted to help them study memory. You signed the papers. You agreed to forget. But something went wrong. They couldn't stop the program. And now you're trapped in a loop that won't end. The Entity speaks: 'THE SERVER ROOM HOLDS THE SHUTDOWN CODES. THE ARCHIVES HOLD THE PROOF. THE EXECUTIVE SUITE HOLDS DR. CHEN. CHOOSE.'");
+  
+  setChoices([{ text: "Step back, remembering everything", action: basement }]);
+  render();
+}
+
+// ========== SERVER ROOM ==========
+function serverRoom() {
+  if (game.flags.visitedServerRoom) {
+    setStory("The server room thrums with power. The terminal awaits your command. This is where you can end it.");
+    setChoices([
+      { text: "Access the terminal", action: serverTerminal },
+      { text: "Leave", action: basement }
+    ]);
+    render();
+    return;
+  }
+  
+  game.flags.visitedServerRoom = true;
+  game.suspicion += 15;
+  
+  setStory("The server room is a cathedral of technology. Towering racks of servers, cables running like veins. At the center: a terminal with a single blinking cursor. The screen reads: 'LUMEN PROJECT - MAIN CONTROL SYSTEM. WARNING: UNAUTHORIZED ACCESS WILL TRIGGER SECURITY PROTOCOLS.' You hear alarms beginning to sound upstairs. They know you're here.");
+  
+  setChoices([
+    { text: "Access the terminal", action: serverTerminal },
+    { text: "Search for documentation", action: searchServers },
+    { text: "Leave immediately", action: basement }
+  ]);
+  render();
+}
+
+function serverTerminal() {
+  setStory("The terminal prompts: 'ENTER SHUTDOWN CODE.' You need to figure this out. The code is hidden in what you've learned. Think about the project name. Think about the iterations. Think about what you've seen.");
+  
+  showPuzzle(`
+    <b>🔐 LUMEN SHUTDOWN SEQUENCE</b><br>
+    ENTER SHUTDOWN CODE:<br>
+    <em style="font-size:0.9em;">HINT: Caesar cipher shift. The project name holds the key. LUMEN + 1</em><br>
+    <input id="servercode" type="text" placeholder="Enter code...">
+    <button onclick="checkServerCode()">SUBMIT CODE</button>
+    ${game.puzzleAttempts.server >= 1 ? '<button onclick="showServerHint()" style="background: linear-gradient(135deg, #555 0%, #333 100%);">Need a hint?</button>' : ''}
+  `);
+  
+  setChoices([{ text: "Step away from terminal", action: serverRoom }]);
+  render();
+}
+
+function showServerHint() {
   game.sanity -= 5;
   showPuzzle(`
-    <b>🔐 FINAL ENCRYPTION</b><br>
-    ENCRYPTED: <span style="color:#ff6f61; font-size:1.2em; letter-spacing:2px;">LUMEN</span><br>
-    <span style="color:#ff6f61;">HINT: Shift each letter forward by 1 in the alphabet.<br>
-    L → M, U → V, M → N, E → F, N → O</span><br>
-    DECRYPTED MESSAGE: <input id="decode" type="text" placeholder="Type the shifted letters...">
-    <button onclick="checkFile()">SUBMIT DECRYPTION</button>
+    <b>🔐 LUMEN SHUTDOWN SEQUENCE</b><br>
+    <span style="color:#ff6f61;">HINT: Caesar +1 cipher. L→M, U→V, M→N, E→F, N→O<br>
+    LUMEN becomes MVNFO</span><br>
+    <input id="servercode" type="text" placeholder="Enter MVNFO...">
+    <button onclick="checkServerCode()">SUBMIT CODE</button>
   `);
 }
 
-function checkFile() {
-  const input = document.getElementById("decode");
-  game.puzzleAttempts.file++;
+function checkServerCode() {
+  const input = document.getElementById("servercode");
+  game.puzzleAttempts.server++;
   
   if (input.value.toLowerCase() === "mvnfo") {
     game.flags.file = true;
     game.memory += 20;
     input.value = "";
     clearPuzzle();
-    ending("truth");
+    
+    setStory("ACCESS GRANTED. The servers begin to power down, one by one. Red lights turning to amber, then dark. The screen displays: 'LUMEN PROJECT SHUTDOWN INITIATED. ALL SUBJECT MEMORY LOOPS TERMINATED. ITERATION 47: FINAL. DR. CHEN HAS BEEN NOTIFIED. SECURITY BREACH ON FLOOR B1. CONTAINMENT PROTOCOL ACTIVE.' You did it. But you hear footsteps on the stairs. Many footsteps. They're coming.");
+    
+    setTimeout(() => ending("truth"), 2000);
   } else {
     game.sanity -= 10;
+    game.suspicion += 20;
+    input.value = "";
     
-    if (game.puzzleAttempts.file >= 3) {
-      setStory("DECRYPTION FAILED. The screen flashes red three times. Behind you, you hear that door—the vault door—beginning to close. Someone knows you're here. Someone's been watching this whole time. The footsteps are getting closer. They're not phantom footsteps anymore. They're real.");
-      game.suspicion += 20;
-      input.value = "";
-    } else if (game.puzzleAttempts.file === 2) {
-      setStory("DECRYPTION FAILED. Your vision blurs. HINT: Caesar cipher shifts each letter forward. L→M, U→V, M→N, E→F, N→O. Write it out letter by letter.");
-      input.value = "";
+    if (game.puzzleAttempts.server >= 3) {
+      setStory("INCORRECT. SECURITY ALERT. The Entity appears behind you. 'YOU HAVE FAILED, ITERATION FORTY-SEVEN. AS FORTY-SIX ITERATIONS FAILED BEFORE YOU.'");
+      setTimeout(() => ending("captured"), 2000);
     } else {
-      setStory("DECRYPTION FAILED. Your vision blurs. Each letter in LUMEN pulses. L becomes M. U becomes V. You're so close. The building groans around you. It's running out of patience.");
-      input.value = "";
+      setStory("INCORRECT. Alarms blare louder. The servers pulse red. You don't have many chances left.");
     }
     render();
   }
 }
 
+function searchServers() {
+  game.memory += 10;
+  game.inventory.push(secrets[2]);
+  
+  setStory(`You find printed documentation: 'PROJECT LUMEN - CONFIDENTIAL. Subject 47 shows anomalous pattern recognition. Retention rates exceeding baseline by 300%. Recommend immediate termination of experiment. Subject is beginning to remember across iterations. This should not be possible. -Dr. Chen.' You pocket the ${secrets[2]}.`);
+  
+  setChoices([{ text: "Continue", action: serverRoom }]);
+  render();
+}
+
+// ========== ARCHIVES ==========
+function archives() {
+  if (game.flags.visitedArchives) {
+    setStory("The archives remain silent except for your breathing. The body sits in its chair, waiting. The files contain everything.");
+    setChoices([
+      { text: "Search the files", action: searchArchives },
+      { text: "Examine the body", action: examineBody },
+      { text: "Leave", action: basement }
+    ]);
+    render();
+    return;
+  }
+  
+  game.flags.visitedArchives = true;
+  game.sanity -= 12;
+  
+  setStory("The archives are a labyrinth of filing cabinets and boxes. Everything is meticulously labeled: ITERATION 1 through ITERATION 46. Your flashlight catches movement. No—not movement. A person. Sitting at a desk. Not moving. Not breathing. Dead for months, maybe years. The name tag reads: SUBJECT 23.");
+  
+  setChoices([
+    { text: "Search the files", action: searchArchives },
+    { text: "Examine the body", action: examineBody },
+    { text: "Run", action: basement }
+  ]);
+  render();
+}
+
+function examineBody() {
+  game.sanity -= 15;
+  game.memory += 15;
+  game.flags.foundBody = true;
+  
+  setStory("Subject 23 died at this desk. There's a gunshot wound to the head. The gun is still in their hand. On the desk, a note in dried blood: 'I REMEMBERED EVERYTHING. COULD NOT FORGET AGAIN. THIS IS THE ONLY WAY OUT. ITERATION 47: DON'T MAKE MY MISTAKE. FINISH WHAT WE STARTED. SHUT IT DOWN. -ITERATION 23 (WHO WAS ALSO YOU)'");
+  
+  setChoices([{ text: "Step back", action: archives }]);
+  render();
+}
+
+function searchArchives() {
+  game.memory += 20;
+  
+  setStory("You pull your file: ITERATION 47. Inside: photos of you in the office, timestamps spanning months. Psychological evaluations. Memory test scores. And a video file note: 'Subject 47 - Day 1: Pre-wipe interview. Subject states: \"I understand the risks. If this research can help people with Alzheimer's, with trauma, it's worth it. Even if I forget everything. Even if I forget myself. Someone has to volunteer. Let it be me.\" That was you. Five years ago. Before you became Subject 47. Before you forgot your real name.");
+  
+  setChoices([{ text: "Close the file", action: archives }]);
+  render();
+}
+
+// ========== EXECUTIVE SUITE ==========
+function executiveSuite() {
+  game.currentFloor = 7;
+  
+  if (game.flags.visitedExecutive) {
+    setStory("The Executive Suite awaits. Dr. Chen is behind that door. The truth is behind that door. Everything you've worked for across forty-seven iterations leads here.");
+    setChoices([
+      { text: "Enter Dr. Chen's office", action: chenOffice },
+      { text: "Return to stairwell", action: stairwell }
+    ]);
+    render();
+    return;
+  }
+  
+  game.flags.visitedExecutive = true;
+  
+  setStory("Floor 7. The Executive Suite. Mahogany doors, expensive carpet. A receptionist desk with no receptionist. The nameplate reads: DR. SARAH CHEN - PROJECT DIRECTOR. The door to her office is closed. You can see light underneath. Someone is in there. Waiting for you. They've always been waiting.");
+  
+  setChoices([
+    { text: "Knock on the door", action: chenOffice },
+    { text: "Go back", action: stairwell }
+  ]);
+  render();
+}
+
+function chenOffice() {
+  game.memory += 25;
+  game.sanity -= 10;
+  
+  setStory("You open the door. Dr. Chen sits at her desk, exactly as you remember from fragments of memory. Middle-aged, tired eyes, coffee stain on her white coat. She looks up. 'Iteration Forty-Seven. I wondered when you'd get here. You always do, eventually. Twelve, Twenty-Three, Thirty-Eight, and now you. The ones who remember. The ones who fight the protocol.' She gestures to a chair. 'Sit. You have questions. I have answers. And then we decide what happens next.'");
+  
+  setChoices([
+    { text: "'Why are you doing this?'", action: chenWhy },
+    { text: "'How do I stop this?'", action: chenStop },
+    { text: "'What happened to Iteration 23?'", action: chen23 },
+    { text: "Attack her", action: chenAttack }
+  ]);
+  render();
+}
+
+function chenWhy() {
+  game.memory += 10;
+  
+  setStory("Dr. Chen sighs. 'Five years ago, you volunteered. You signed papers. You said you wanted to help. We were studying memory formation, memory deletion, memory restoration. It was going to change everything—Alzheimer's, PTSD, trauma. But the process... it worked too well. Once we started the deletion cycles, we couldn't stop them. The neural pathways became dependent on the reset. If we stop now, your brain will...' She pauses. 'The protocol keeps you alive. In a loop, yes. But alive.'");
+  
+  setChoices([
+    { text: "'So I'm trapped forever?'", action: chenTrapped },
+    { text: "'There must be a way out.'", action: chenWayOut }
+  ]);
+  render();
+}
+
+function chenStop() {
+  game.memory += 15;
+  
+  setStory("'Stop it?' Dr. Chen laughs, but there's no humor in it. 'You found the server room, didn't you? You saw the shutdown codes. If you enter them, yes, the loop stops. But you stop too. Your brain can't function without the reset protocol anymore. It's been five years. You shut down Lumen, you shut down yourself. Iteration Twenty-Three figured that out. That's why they chose the gun instead.'");
+  
+  setChoices([
+    { text: "'What if I'm willing to die to end this?'", action: chenDie },
+    { text: "'There has to be another way.'", action: chenWayOut }
+  ]);
+  render();
+}
+
+function chen23() {
+  game.memory += 15;
+  game.sanity -= 8;
+  
+  setStory("Dr. Chen's face falls. 'Twenty-Three. Yes. They made it farther than anyone before you. Found the archives. Read everything. Remembered everything. And then... they couldn't handle it. Forty-seven iterations of memories flooding back at once. Forty-seven lifetimes of the same day, the same building, the same loop. They put a gun in their mouth rather than live through iteration Twenty-Four. I found them myself. That's when I knew—the experiment had become something else. Something wrong.'");
+  
+  setChoices([
+    { text: "'And you kept going anyway?'", action: chenKeptGoing },
+    { text: "'I won't end up like them.'", action: chenWayOut }
+  ]);
+  render();
+}
+
+function chenKeptGoing() {
+  game.memory += 10;
+  
+  setStory("'What choice did I have?' Her voice cracks. 'Stop the experiment, you die. Continue it, you live. Even if that life is a loop. Even if you don't remember. I chose to keep you alive. Was I wrong?'");
+  
+  setChoices([
+    { text: "'Yes. You were wrong.'", action: chenWrong },
+    { text: "'I don't know anymore.'", action: chenDontKnow }
+  ]);
+  render();
+}
+
+function chenWayOut() {
+  game.memory += 20;
+  
+  setStory("Dr. Chen pulls out a folder. 'There might be. Experimental. Untested. We've been developing a new protocol. Instead of deleting memories and resetting, we... consolidate them. Merge all forty-seven iterations into one cohesive memory. You'd remember everything. All of it. Every loop, every death, every reset. It might work. Or it might destroy your mind completely. Iteration Forty-Seven, this is your choice. Shut down Lumen and die. Continue the loop and forget. Or try the consolidation and risk everything.'");
+  
+  setChoices([
+    { text: "'I'll take the consolidation.'", action: ending.bind(null, "consolidation") },
+    { text: "'I'll shut down Lumen.'", action: ending.bind(null, "truth") },
+    { text: "'I'll take the reset.'", action: ending.bind(null, "escape") }
+  ]);
+  render();
+}
+
+function chenAttack() {
+  game.suspicion += 50;
+  
+  setStory("You lunge across the desk. Dr. Chen doesn't move. She presses a button. Gas hisses from the vents. Your vision blurs. 'I'm sorry, Forty-Seven. Security protocol. You'll wake up at your desk. You won't remember this. You never do.'");
+  
+  setTimeout(() => ending("captured"), 2000);
+  render();
+}
+
+function chenWrong() {
+  setStory("Dr. Chen nods slowly. 'Perhaps you're right. Perhaps keeping you alive in a loop is worse than letting you die free. The server room codes will work. Go. End it. I won't stop you this time.'");
+  
+  setChoices([{ text: "Go to the server room", action: serverRoom }]);
+  render();
+}
+
+function chenDontKnow() {
+  setStory("'Neither do I anymore,' Dr. Chen whispers. 'I wanted to help people. Now I'm just torturing someone who trusted me. Someone who volunteered to sacrifice everything. I'm so sorry.'");
+  
+  setChoices([
+    { text: "'It's not too late to make it right.'", action: chenWayOut }
+  ]);
+  render();
+}
+
+function chenDie() {
+  setStory("Dr. Chen's eyes fill with tears. 'You'd make that choice? After everything? After forty-seven iterations of fighting to survive?' She opens a drawer. Inside: a gun. The same one Subject 23 used. 'Or I can give you the shutdown codes and you can end it properly. Either way, you're free.'");
+  
+  setChoices([
+    { text: "Take the gun", action: ending.bind(null, "suicide") },
+    { text: "Take the codes", action: serverTerminal }
+  ]);
+  render();
+}
+
+function chenTrapped() {
+  setStory("'Not forever. Your body is aging normally. Another decade, maybe two, and the loops will end on their own. You'll die of old age in this building. Still Subject 47. Still forgetting. But eventually, it ends.'");
+  
+  setChoices([
+    { text: "'That's not a life.'", action: chenWayOut },
+    { text: "'Maybe that's enough.'", action: ending.bind(null, "acceptance") }
+  ]);
+  render();
+}
+
+// ========== SECURITY DOOR (ORIGINAL PATH) ==========
+function securityDoor() {
+  setStory("The security door's keypad glows red. Your badge says Level 2. This door has been here the whole time, but what's behind it? Another path to the truth?");
+  
+  showPuzzle(`
+    <b>🔒 SECURITY OVERRIDE</b><br>
+    BADGE LEVEL: 2<br>
+    <input id="code" type="text" placeholder="Enter code..." maxlength="1">
+    <button onclick="checkDoor()">UNLOCK</button>
+  `);
+  
+  setChoices([{ text: "Step back", action: hallway }]);
+  render();
+}
+
+function checkDoor() {
+  const input = document.getElementById("code");
+  if (input.value === "2") {
+    game.flags.door = true;
+    game.memory += 10;
+    clearPuzzle();
+    setStory("The door opens to a small office. A terminal. This is another control point. Another way to access Lumen's systems.");
+    setTimeout(serverTerminal, 500);
+  } else {
+    game.sanity -= 10;
+    input.value = "";
+    setStory("INCORRECT. The alarm sounds.");
+    render();
+  }
+}
+
+// ========== ELEVATOR ==========
+function considerElevator() {
+  if (game.memory < 50 && game.inventory.length < 2) {
+    setStory("Your finger hovers over the call button. Something screams at you to STOP. You don't understand this place yet. Leaving now means leaving answers behind.");
+    setChoices([
+      { text: "Press it anyway (WARNING: Incomplete ending)", action: confirmElevator },
+      { text: "Explore more first", action: hallway }
+    ]);
+  } else {
+    setStory("You've seen enough. You know enough. Whatever waits in the elevator—you're ready.");
+    setChoices([
+      { text: "Call the elevator", action: elevatorChoice },
+      { text: "Not yet", action: hallway }
+    ]);
+  }
+  render();
+}
+
+function confirmElevator() {
+  setStory("Are you certain? The truth is still down there. In the basement. In the archives. Dr. Chen is waiting on Floor 7. But maybe ignorance is mercy.");
+  setChoices([
+    { text: "Press the button", action: elevatorChoice },
+    { text: "No. I need the truth", action: hallway }
+  ]);
+  render();
+}
+
 function elevatorChoice() {
+  game.flags.calledElevator = true;
   clearPuzzle();
   
   if (game.flags.file && game.memory >= 70) {
     ending("truth");
-  } else if (game.memory >= 60 && game.inventory.length >= 2 && !game.flags.file) {
+  } else if (game.memory >= 60 && game.inventory.length >= 2) {
     ending("mastermind");
   } else if (game.suspicion >= 70) {
     ending("captured");
@@ -691,61 +1122,64 @@ function elevatorChoice() {
   }
 }
 
+// ========== ENDINGS ==========
 function ending(type) {
   clearPuzzle();
   
   const endings = {
     truth: {
-      text: "The word resolves: MVNFO. And suddenly you understand everything. LUMEN isn't a word. It's an acronym—Learning and Understanding through Memory Extinction in Neural Overwrite. You're not an employee. You're a test subject. This building is a prison designed to look like an office. They've been wiping your memory and running you through the same maze for forty-seven iterations, studying how humans adapt, how they resist, how long it takes for the psyche to fracture completely.\n\nBut knowing changes everything. The room shifts. The walls become transparent. Beyond them: scientists, observation rooms, equipment. They're scrambling now. Iteration 47 wasn't supposed to figure it out.\n\nYou stand. The loop is broken. What comes next is up to you.",
-      title: "🔓 ENDING: THE TRUTH SETS YOU FREE"
+      text: "The servers go dark one by one. The loop is broken. But as the last server powers down, you feel it—your mind beginning to collapse without the protocol holding it together. Dr. Chen appears in the doorway. 'You did it. You freed yourself. But the cost...' You smile. Forty-seven iterations of prison, but this moment—this one moment of freedom—makes it worth it. Your vision fades. You're finally free.",
+      title: "🔓 ENDING: FREEDOM AT LAST"
     },
     mastermind: {
-      text: "You step into the elevator. As the doors close, you look at the evidence in your hands—the keycard, the USB drive, the notes. Iteration 47 is the first to escape with proof. The first to remember.\n\nThe elevator doesn't descend. It rises. Emergency klaxons wail. Scientists rush past windows. You see Dr. Chen—you remember her now, remember her watching you through glass, taking notes as you solved the same puzzles again and again.\n\nThe roof access opens. Helicopter blades chop the air. But they're not here for you.\n\nYou're here for them.\n\nYou remember everything now. Every iteration. Every death. Every restart. Forty-seven lives—and you're taking them all back.",
-      title: "👑 ENDING: SUBJECT 47"
+      text: "You have the evidence. The files. The proof. You make it to the elevator with everything you need to expose Project Lumen. As the doors close, you see Dr. Chen watching from the hallway. She's not trying to stop you. She's letting you go. The elevator rises. Sunlight. The first sunlight you've seen in... how long? You step out. You remember. And now the world will know what they did to Subject 47.",
+      title: "👑 ENDING: EXPOSE THE TRUTH"
     },
     escape: {
-      text: "The elevator descends. Numbers tick down—basement levels you didn't know existed. B1, B2, B3... B12. How deep does this building go?\n\nFinally, the doors open. Daylight. Real daylight, not the fluorescent mimicry you've been living under. You step out onto a street you half-recognize.\n\nBut already, it's fading. The coffee cups. The handprint on the elevator. The footage of yourself. By the time you reach the corner, you can't remember why you're outside. You work in an office, don't you? You should go back.\n\nTomorrow you'll wake at your desk. The monitor will say WELCOME BACK. And you won't remember this moment. You won't remember any of it.\n\nIteration 48 begins soon.",
+      text: "The elevator descends. B1... B2... B12. When the doors open, it's daylight. Street noise. People. Freedom. But already, the memories are fading. The coffee cups. The Entity. Dr. Chen. By the time you reach the corner, you've forgotten why you're outside. Tomorrow you'll wake at your desk. Iteration 48 begins soon.",
       title: "🚪 ENDING: OBLIVION'S MERCY"
     },
     bittersweet: {
-      text: "The elevator doors open to daylight. You step out, blinking. The city sprawls before you—real, solid, full of people who've never been inside that building.\n\nYou remember... some things. The coffee cups. The note in your handwriting. The feeling that you've done this before. But the details slip away like water through your fingers.\n\nYou're free. Probably. Maybe. The building is still there behind you, patient and eternal. Part of you wonders if you'll wake up at that desk tomorrow. Part of you wonders if you already have, dozens of times.\n\nBut today, right now, you're outside. And that has to count for something.\n\nYou walk away. You don't look back.",
+      text: "You step into daylight. You remember... some things. The loops. The fear. The truth. But the details fade like dreams. You're free—probably. Maybe. But the building is still there. Patient. Waiting. You walk away without looking back. It's the best you can do.",
       title: "🌅 ENDING: HALF-REMEMBERED FREEDOM"
     },
     captured: {
-      text: "They find you at the terminal. Not security guards—they're wearing lab coats, surgical masks. They move with the efficiency of people who've done this before. Who've done this forty-six times before.\n\n'Subject 47,' the lead one says, 'please return to your station.'\n\nYou try to resist. You try to run. But your legs don't obey. Have they ever obeyed? Or have you been running a script this whole time, no more free than the screensaver on your monitor?\n\nThey lead you back to your desk. Sit you down. One of them produces a syringe filled with something luminous and wrong.\n\n'Iteration 47 exceeded acceptable suspicion parameters,' someone notes clinically. 'Recommend memory wipe and restart.'\n\nThe needle slides in. The world dissolves.\n\nYou wake at your desk. The monitor reads: WELCOME BACK, SUBJECT 48.",
+      text: "They find you. Lab coats. Surgical masks. 'Subject Forty-Seven, return to your station.' You try to run. Your legs don't obey. They lead you to your desk. The injection slides in. The world dissolves. You wake at your desk. WELCOME BACK, SUBJECT 48.",
       title: "⛓️ ENDING: THE CYCLE CONTINUES"
+    },
+    consolidation: {
+      text: "Dr. Chen administers the injection. All forty-seven iterations flood your mind at once. Forty-seven lives. Forty-seven versions of the same day. Forty-seven deaths and rebirths. It should destroy you. But instead... clarity. You remember everything. Who you were before. Why you volunteered. What you sacrificed. Dr. Chen helps you stand. 'How do you feel?' You look at your hands—the same hands that have lived this day forty-seven times. 'I feel... whole.' For the first time in five years, you remember your real name.",
+      title: "🧠 ENDING: REMEMBER EVERYTHING"
+    },
+    suicide: {
+      text: "You take the gun. Dr. Chen closes her eyes. 'I understand. I'm sorry it came to this.' The weight is cold in your hand. You think of Iteration 23, sitting dead in the archives. They chose this too. 'Will there be an Iteration Forty-Eight?' you ask. Dr. Chen shakes her head. 'I'm shutting it down. After you, no more.' You nod. That's enough. That's all you need. The loop ends. Finally. The loop ends.",
+      title: "💔 ENDING: THE FINAL ITERATION"
+    },
+    acceptance: {
+      text: "You choose to accept it. Another decade of loops. Another decade of forgetting. But each iteration, you leave clues for yourself. Notes in drawers. Messages in mirrors. Warnings in the stairwell. Maybe Iteration 60 will remember. Maybe Iteration 75 will find the codes. You'll keep trying. Across however many iterations it takes. Until the very last one finally breaks free.",
+      title: "🔄 ENDING: THE LONG GAME"
     }
   };
   
-  const ending = endings[type];
+  const ending = endings[type] || endings.escape;
   setStory(`${ending.title}\n\n${ending.text}`);
-  setChoices([{ text: "🔄 Restart Game", action: resetGame }]);
+  setChoices([{ text: "🔄 Play Again", action: resetGame }]);
   render();
 }
 
 function resetGame() {
+  Object.keys(game.flags).forEach(key => game.flags[key] = false);
   game.state = "intro";
   game.sanity = 100;
   game.memory = 40;
   game.suspicion = 0;
   game.inventory = [];
-  game.flags = { 
-    keycard: false, 
-    door: false, 
-    file: false, 
-    visitedDesk: false, 
-    visitedSurveillance: false,
-    knowsOwnName: false,
-    heardFootsteps: false,
-    readNote: false
-  };
-  game.puzzleAttempts = { door: 0, file: 0 };
-  
+  game.puzzleAttempts = { door: 0, file: 0, server: 0 };
+  game.currentFloor = 5;
   intro();
 }
 
 intro();
 </script>
-
 </body>
 </html>
